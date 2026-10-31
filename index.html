@@ -326,7 +326,7 @@ var FEATURES = [
 ];
 var NEAR = [
   ['lake','Sjö','💧'],['forest','Skog','🌲'],['grocery','Matbutik','🛒'],['school','Grundskola (F–9)','🏫'],
-  ['preschool','Förskola','🧸'],['transit','Kollektivtrafik','🚌'],['center','Ort/centrum','🏘️']
+  ['preschool','Förskola','🧸'],['transit','Kollektivtrafik','🚌'],['center','Stad/tätort','🏘️']
 ];
 // Driftkostnadens delar – anges per år eller per månad (väljs per rad)
 var DRIFT_ITEMS = [['el','El'],['heat','Uppvärmning'],['water','Vatten och avlopp'],['waste','Sophämtning'],['insurance','Hem-/villaförsäkring'],
@@ -1263,6 +1263,24 @@ function geomDistance(lat,lon,geom){
   }
   return min;
 }
+// yta i m² för ett slutet område (lokal plan projektion); null om området är avklippt vid sökrutan
+function polygonArea(geom,lat){
+  if(!geom||geom.length<4)return null;
+  var a=geom[0],z=geom[geom.length-1];if(a.lat!==z.lat||a.lon!==z.lon)return null;
+  var kx=111320*Math.cos(lat*Math.PI/180),ky=110540,s=0;
+  for(var i=1;i<geom.length;i++)s+=(geom[i-1].lon*kx)*(geom[i].lat*ky)-(geom[i].lon*kx)*(geom[i-1].lat*ky);
+  return Math.abs(s/2);
+}
+// små vattenytor och skogsdungar räknas inte: sjö minst 1 ha (namnlös 3 ha), skog minst 2 ha
+var MIN_AREA={lake:10000,lakeUnnamed:30000,forest:20000};
+function bigEnough(k,e,lat){
+  if(e.type==='relation')return true; // multipolygoner är i regel stora
+  var area=polygonArea(e.geometry,lat);
+  if(area==null)return true;          // avklippt vid sökrutan = större än rutan
+  if(k==='lake')return area>=(e.tags.name?MIN_AREA.lake:MIN_AREA.lakeUnnamed);
+  if(k==='forest')return area>=MIN_AREA.forest;
+  return true;
+}
 function classify(tags){
   if(!tags)return null;
   if(tags.natural==='water')return 'lake';
@@ -1305,7 +1323,8 @@ function fetchNear(i){
   var lat=h.lat,lon=h.lon,P=lat+','+lon;
   function bb(m){var dy=m/110540,dx=m/(111320*Math.cos(lat*Math.PI/180));return [lat-dy,lon-dx,lat+dy,lon+dx].map(function(x){return x.toFixed(5)}).join(',')}
   function A(m){return '(around:'+m+','+P+')'}
-  var W='[water~"^(lake|pond|reservoir|lagoon|oxbow)$"]';
+  // bara riktiga sjöar: water=lake/oxbow eller vatten utan typ (dammar, magasin, åar m.m. räknas inte)
+  var W='[water~"^(lake|oxbow)$"]';
   // Sjö och skog kräver områdenas form och hämtas från Overpass, en fråga i taget.
   // Övriga platser hämtas från Photon (se photonNear), som är snabbare och mer tillgänglig.
   var parts=[
@@ -1338,26 +1357,25 @@ function fetchNear(i){
       if(state.houses[i].lat!==lat)return;
       return overpass('[out:json][timeout:25];'+part.q).then(function(res){
         if(state.houses[i].lat!==lat)return;
-        var best={},names={},pos={},bus=[];
+        var k=part.keys[0],best=null,name='';
         (res.elements||[]).forEach(function(e){
-          var k=classify(e.tags);if(!k||part.keys.indexOf(k)<0)return;
-          var d,p=e.type==='node'?{lat:e.lat,lon:e.lon}:e.center||null;
-          if(p)d=haversine(lat,lon,p.lat,p.lon);
-          else if(e.geometry)d=geomDistance(lat,lon,e.geometry);
+          if(classify(e.tags)!==k||!bigEnough(k,e,lat))return;
+          var d;
+          if(e.geometry)d=geomDistance(lat,lon,e.geometry);
           else if(e.members){d=Infinity;e.members.forEach(function(m){if(m.geometry&&m.geometry.length)d=Math.min(d,geomDistance(lat,lon,m.geometry))})}
           if(d==null||!isFinite(d))return;
-          if(best[k]==null||d<best[k]){best[k]=d;names[k]=e.tags.name||'';pos[k]=p}
-          if(p&&e.tags.highway==='bus_stop')bus.push({lat:p.lat,lon:p.lon,name:e.tags.name||'',d:Math.round(d)});
+          // ett namngivet vatten vinner över ett namnlöst som bara ligger obetydligt närmare
+          var score=d-(k==='lake'&&e.tags.name?100:0);
+          if(best==null||score<best.score){best={d:d,score:score};name=e.tags.name||''}
         });
         var hh=state.houses[i];
-        part.keys.forEach(function(k){hh.near[k]=best[k]!=null?Math.round(best[k]):null;hh.nearNames[k]=names[k]||(best[k]==null?'Inget inom '+fmtNum(NEAR_RADIUS[k],1)+' km':'');
-          if(MAP_POI[k]&&pos[k])hh.nearPts[k]={lat:pos[k].lat,lon:pos[k].lon,name:names[k],d:Math.round(best[k])}});
-        // de fem närmaste busshållplatserna – en per namn (hållplatser finns ofta i båda riktningarna)
-        if(part.keys.indexOf('transit')>=0){
-          var seen={};hh.busStops=bus.sort(function(a,b){return a.d-b.d}).filter(function(s){var key=s.name||(s.lat.toFixed(4)+','+s.lon.toFixed(4));if(seen[key])return false;seen[key]=1;return true}).slice(0,5);
-        }
+        hh.near[k]=best?Math.round(best.d):null;
+        hh.nearNames[k]=best?(name||(k==='lake'?'Namnlös sjö':'')):'Inget inom '+fmtNum(NEAR_RADIUS[k],1)+' km';
         save();renderHouse(i);renderAll();
-      }).catch(function(){failed++}).then(function(){
+      }).catch(function(){failed++;
+        // visa hellre att värdet saknas än ett gammalt, kanske felaktigt värde
+        var hh=state.houses[i],k=part.keys[0];hh.near[k]=null;hh.nearNames[k]='Kunde inte hämtas – försök igen';save();renderHouse(i);renderAll();
+      }).then(function(){
         done++;if(done<total)nearStatus(i,'Platserna är klara – räknar avstånd till sjö och skog…',true);
       });
     });
@@ -1371,15 +1389,17 @@ function fetchNear(i){
 
 // Närmaste platser, sorterade efter avstånd. Photon först; svarar den inte används Nominatim
 // (som bara får frågas en gång per sekund och söker inom växande rutor runt bostaden).
-var NEAR_VERSION=4; // höjs när närhetsberäkningen ändras, så att sparade bostäder räknas om
+var NEAR_VERSION=5; // höjs när närhetsberäkningen ändras, så att sparade bostäder räknas om
 var PLACE_QUERIES=[
-  {key:'grocery',tags:['shop:supermarket','shop:convenience'],radius:5,nom:'supermarket',steps:[2,5]},
+  // livsmedelsbutiker före närbutiker/kiosker – kiosker används bara om ingen riktig butik finns
+  {key:'grocery',tags:['shop:supermarket','shop:convenience'],radius:5,limit:30,nom:'supermarket',steps:[2,5],prefer:['supermarket']},
   // kartdatan skiljer inte på skolformer – gymnasier, vuxenutbildning m.m. sorteras bort på namnet
   {key:'school',tags:['amenity:school'],radius:5,limit:40,nom:'school',steps:[2,5],
    keep:function(p){return !/gymnasi|komvux|vuxenutb|yrkeshög|folkhög|högskola|universitet|kulturskola|musikskola|trafikskola|körskola|dansskola|simskola|språkskola|\bsfi\b|lernia|folkuniversitet|naturbruk|yrkesskola|gymnasiesärskola/i.test(p.name)}},
   {key:'preschool',tags:['amenity:kindergarten'],radius:5,nom:'kindergarten',steps:[2,5]},
   {key:'transit',tags:['highway:bus_stop','railway:station','railway:halt','railway:tram_stop'],radius:2.5,limit:30,nom:'bus stop',steps:[0.8,2.5],want:5},
-  {key:'center',tags:['place:city','place:town','place:village'],radius:20}
+  // stad eller tätort i första hand, by bara om inget större finns
+  {key:'center',tags:['place:city','place:town','place:village'],radius:20,limit:30,prefer:['city','town']}
 ];
 function timedFetch(url,ms,opt){
   var ctl=window.AbortController?new AbortController():null,t=ctl&&setTimeout(function(){ctl.abort()},ms);
@@ -1414,7 +1434,13 @@ function uniqueStops(list){var seen={};return list.filter(function(s){if(s.type!
   var key=s.name||(s.lat.toFixed(4)+','+s.lon.toFixed(4));if(seen[key])return false;seen[key]=1;return true})}
 // en platstyp: Photon, annars Nominatim med större och större ruta; null = gick inte att hämta
 function placeList(lat,lon,pq){
-  var keep=function(list){return list&&pq.keep?list.filter(pq.keep):list};
+  var keep=function(list){
+    if(!list)return list;
+    if(pq.keep)list=list.filter(pq.keep);
+    if(pq.prefer){var top=list.filter(function(p){return pq.prefer.indexOf(p.type)>=0});
+      if(top.length)list=top.concat(list.filter(function(p){return top.indexOf(p)<0}))}
+    return list;
+  };
   return photonNear(lat,lon,pq.tags,pq.radius,pq.limit).then(keep).catch(function(){
     if(!pq.nom)return null;
     var k=0;
