@@ -161,6 +161,12 @@ table.cmp td.lab small{display:block}
 .map-note{font-size:13px;color:var(--muted);margin-top:8px}
 .pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:grid;place-items:center;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .pin b{transform:rotate(45deg);color:#fff;font:800 13px Nunito,sans-serif}
+.poi{width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid;display:grid;place-items:center;font-size:14px;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.map-tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13.5px;font-weight:700}
+.legend .lg{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.pin-mini{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#fff;font-size:10px;font-weight:800}
+.zoom-btns{display:flex;gap:6px;flex-wrap:wrap}
 
 .howto ol{margin:6px 0 0;padding-left:20px}
 .howto li{margin:4px 0}
@@ -253,8 +259,18 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
 
   <section class="card">
     <h2>Karta</h2>
+    <div class="map-tools">
+      <div class="legend" id="mapLegend">
+        <span class="lg"><span class="pin-mini" style="background:var(--a)">A</span><span class="pin-mini" style="background:var(--b)">B</span> Bostäderna</span>
+        <label class="lg"><input type="checkbox" data-mapshow="school"> 🏫 Skola</label>
+        <label class="lg"><input type="checkbox" data-mapshow="preschool"> 🧸 Förskola</label>
+        <label class="lg"><input type="checkbox" data-mapshow="grocery"> 🛒 Matbutik</label>
+        <label class="lg"><input type="checkbox" data-mapshow="bus"> 🚌 5 närmaste busshållplatser</label>
+      </div>
+      <div class="zoom-btns"><button class="btn small" type="button" data-zoom="0">Visa runt A</button><button class="btn small" type="button" data-zoom="1">Visa runt B</button><button class="btn small" type="button" data-zoom="all">Visa båda</button></div>
+    </div>
     <div id="map"></div>
-    <p class="map-note" id="mapNote">Läget hämtas från Booli eller från adressen. Du kan dra markörerna om läget inte stämmer.</p>
+    <p class="map-note" id="mapNote">Ringens färg visar vilken bostad platsen hör till (blå = A, orange = B). Klicka på en ikon för namn och avstånd. Du kan dra bostadsmarkörerna om läget inte stämmer.</p>
   </section>
 
   <section class="card howto">
@@ -329,10 +345,11 @@ function newHouse(current){
     rent:null,drift:null,driftItems:{},kwh:null,household:null,costs:{},per:{},
     propertyFee:null,down:null,extraDown:null,existingLoan:null,rateFixedUntil:'',lender:'',rate:3,deduction:false,amortMode:'auto',amortPct:null,amortKr:null,pantbrev:null,
     salePrice:null,brokerFee:null,saleOther:null,purchasePrice:null,improvements:null,deferTax:false,
-    building:{},features:{},extraFeatures:[],lat:null,lon:null,near:{},nearNames:{},notes:'',image:'',booliInfo:[]};
+    building:{},features:{},extraFeatures:[],lat:null,lon:null,near:{},nearNames:{},nearPts:{},busStops:[],notes:'',image:'',booliInfo:[]};
 }
 // g = gemensamt för hushållet: nettoinkomst, övriga utgifter och stresstestets räntehöjning
-function freshState(){return {houses:[newHouse(true),newHouse(false)],tab:0,open:{},g:{income:null,otherExp:null,stress:2}}}
+var MAP_SHOW_DEFAULT={school:true,preschool:true,grocery:true,bus:true};
+function freshState(){return {houses:[newHouse(true),newHouse(false)],tab:0,open:{},g:{income:null,otherExp:null,stress:2},mapShow:Object.assign({},MAP_SHOW_DEFAULT)}}
 var state = load() || freshState();
 
 function load(){
@@ -364,6 +381,7 @@ function load(){
     delete s.loan;
     s.open=s.open||{};
     s.g=Object.assign({income:null,otherExp:null,stress:2},s.g);
+    s.mapShow=Object.assign({},MAP_SHOW_DEFAULT,s.mapShow);
     return s;}}catch(e){}
   return null;
 }
@@ -1279,25 +1297,33 @@ function fetchNear(i){
     {keys:['forest'],q:'(way'+A(1500)+'[landuse=forest];way'+A(1500)+'[natural=wood];relation'+A(1500)+'[landuse=forest];relation'+A(1500)+'[natural=wood];);out tags geom('+bb(1700)+');'}
   ];
   var failed=0,done=0;
+  // platser som ritas ut på kartan fylls i allteftersom svaren kommer
+  h.nearPts={};h.busStops=[];
   nearStatus(i,'Räknar ut avstånd… (0 av '+parts.length+')',true);
   parts.reduce(function(chain,part){
     return chain.then(function(){
       if(state.houses[i].lat!==lat)return;
       return overpass('[out:json][timeout:25];'+part.q).then(function(res){
         if(state.houses[i].lat!==lat)return;
-        var best={},names={};
+        var best={},names={},pos={},bus=[];
         (res.elements||[]).forEach(function(e){
           var k=classify(e.tags);if(!k||part.keys.indexOf(k)<0)return;
-          var d;
-          if(e.type==='node')d=haversine(lat,lon,e.lat,e.lon);
-          else if(e.center)d=haversine(lat,lon,e.center.lat,e.center.lon);
+          var d,p=e.type==='node'?{lat:e.lat,lon:e.lon}:e.center||null;
+          if(p)d=haversine(lat,lon,p.lat,p.lon);
           else if(e.geometry)d=geomDistance(lat,lon,e.geometry);
           else if(e.members){d=Infinity;e.members.forEach(function(m){if(m.geometry&&m.geometry.length)d=Math.min(d,geomDistance(lat,lon,m.geometry))})}
           if(d==null||!isFinite(d))return;
-          if(best[k]==null||d<best[k]){best[k]=d;names[k]=e.tags.name||''}
+          if(best[k]==null||d<best[k]){best[k]=d;names[k]=e.tags.name||'';pos[k]=p}
+          if(p&&e.tags.highway==='bus_stop')bus.push({lat:p.lat,lon:p.lon,name:e.tags.name||'',d:Math.round(d)});
         });
         var hh=state.houses[i];
-        part.keys.forEach(function(k){hh.near[k]=best[k]!=null?Math.round(best[k]):null;hh.nearNames[k]=names[k]||(best[k]==null?'Inget inom '+fmtNum(NEAR_RADIUS[k],1)+' km':'')});
+        part.keys.forEach(function(k){hh.near[k]=best[k]!=null?Math.round(best[k]):null;hh.nearNames[k]=names[k]||(best[k]==null?'Inget inom '+fmtNum(NEAR_RADIUS[k],1)+' km':'');
+          if(MAP_POI[k]&&pos[k])hh.nearPts[k]={lat:pos[k].lat,lon:pos[k].lon,name:names[k],d:Math.round(best[k])}});
+        // de fem närmaste busshållplatserna – en per namn (hållplatser finns ofta i båda riktningarna)
+        if(part.keys.indexOf('transit')>=0){
+          var seen={};hh.busStops=bus.sort(function(a,b){return a.d-b.d}).filter(function(s){var key=s.name||(s.lat.toFixed(4)+','+s.lon.toFixed(4));if(seen[key])return false;seen[key]=1;return true}).slice(0,5);
+        }
+        hh.nearV=2;
         save();renderHouse(i);renderAll();
       }).catch(function(){failed++}).then(function(){
         done++;if(done<parts.length)nearStatus(i,'Räknar ut avstånd… ('+done+' av '+parts.length+')',true);
@@ -1310,11 +1336,30 @@ function fetchNear(i){
 }
 
 /* ---------- Karta ---------- */
-var map,markers=[null,null],line=null,lastFit='';
+// platser som ritas ut runt bostäderna; ringens färg visar vilken bostad de hör till
+var MAP_POI={school:{icon:'🏫',label:'Närmaste skola'},preschool:{icon:'🧸',label:'Närmaste förskola'},grocery:{icon:'🛒',label:'Närmaste matbutik'}};
+var BUS={icon:'🚌',label:'Busshållplats'};
+var map,markers=[null,null],line=null,lastFit='',poiLayer=null,poiKey='';
+function poiIcon(i,emoji){return L.divIcon({className:'',html:'<div class="poi" style="border-color:'+(i?'var(--b)':'var(--a)')+'">'+emoji+'</div>',iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-14]})}
+function drawPois(){
+  var show=state.mapShow;
+  var key=JSON.stringify([show,state.houses.map(function(h){return [h.lat,h.nearPts,h.busStops]})]);
+  if(key===poiKey)return;poiKey=key;
+  poiLayer.clearLayers();
+  [0,1].forEach(function(i){
+    var h=state.houses[i];if(h.lat==null)return;
+    var who=letter(i)+' · '+esc(houseName(i));
+    Object.keys(MAP_POI).forEach(function(k){var p=h.nearPts&&h.nearPts[k];if(!p||!show[k])return;
+      L.marker([p.lat,p.lon],{icon:poiIcon(i,MAP_POI[k].icon),zIndexOffset:-100}).bindPopup('<b>'+MAP_POI[k].icon+' '+esc(p.name||MAP_POI[k].label)+'</b><br>'+MAP_POI[k].label+' · '+dist(p.d)+'<br><small>från '+who+'</small>').addTo(poiLayer)});
+    if(show.bus)(h.busStops||[]).forEach(function(s,n){
+      L.marker([s.lat,s.lon],{icon:poiIcon(i,BUS.icon),zIndexOffset:-200}).bindPopup('<b>🚌 '+esc(s.name||'Busshållplats')+'</b><br>'+(n+1)+':a närmaste hållplatsen · '+dist(s.d)+'<br><small>från '+who+'</small>').addTo(poiLayer)});
+  });
+}
 function initMap(){
   if(!window.L){$('#mapNote').textContent='Kartan kunde inte laddas (ingen internetanslutning?).';return}
   map=L.map('map',{scrollWheelZoom:false}).setView([62.5,16],4);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  poiLayer=L.layerGroup().addTo(map);
   map.on('focus',function(){map.scrollWheelZoom.enable()});
   map.on('blur',function(){map.scrollWheelZoom.disable()});
   // Kartan kan skapas innan layouten är klar – mät om och centrera när den syns
@@ -1339,13 +1384,27 @@ function updateMap(){
   });
   if(line){map.removeLayer(line);line=null}
   if(pts.length===2)line=L.polyline(pts,{color:'#3aa597',weight:2,dashArray:'6 6'}).addTo(map);
+  drawPois();
   var key=JSON.stringify(pts);
   if(key!==lastFit){lastFit=key;
     if(pts.length===2)map.fitBounds(pts,{padding:[50,50],maxZoom:15});else if(pts.length===1)map.setView(pts[0],15);}
 }
+// zooma in på en bostad och dess närmaste platser
+function zoomHouse(i){
+  var h=state.houses[i];if(!map||h.lat==null)return;
+  var b=[[h.lat,h.lon]];
+  Object.keys(MAP_POI).forEach(function(k){var p=h.nearPts&&h.nearPts[k];if(p&&state.mapShow[k])b.push([p.lat,p.lon])});
+  if(state.mapShow.bus)(h.busStops||[]).forEach(function(s){b.push([s.lat,s.lon])});
+  if(b.length>1)map.fitBounds(b,{padding:[40,40],maxZoom:16});else map.setView(b[0],15);
+}
 
 /* ---------- Övrigt UI ---------- */
 function bindGlobal(){
+  // kartans teckenförklaring: visa/dölj platstyper och zooma
+  $$('[data-mapshow]').forEach(function(cb){cb.checked=!!state.mapShow[cb.dataset.mapshow];
+    cb.addEventListener('change',function(){state.mapShow[cb.dataset.mapshow]=cb.checked;save();updateMap()})});
+  $$('[data-zoom]').forEach(function(b){b.addEventListener('click',function(){
+    if(b.dataset.zoom==='all'){lastFit='';updateMap()}else zoomHouse(+b.dataset.zoom)})});
   var cs=$('#cmpSec');if(state.open.cmp===false)cs.open=false;
   cs.addEventListener('toggle',function(){state.open.cmp=cs.open;save()});
   $$('#tabs button').forEach(function(b){b.addEventListener('click',function(){setTab(+b.dataset.i)})});
@@ -1430,6 +1489,8 @@ build();
 initMap();
 renderAll();
 if(!checkShare())checkHashImport();
+// bostäder vars närområde räknades ut innan platserna sparades för kartan hämtas om
+[0,1].forEach(function(i){var h=state.houses[i];if(h.lat!=null&&h.nearV!==2)fetchNear(i)});
 window.addEventListener('hashchange',function(){if(!checkShare())checkHashImport()});
 window.addEventListener('resize',function(){if(map)map.invalidateSize()});
 })();
