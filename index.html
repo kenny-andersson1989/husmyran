@@ -376,6 +376,9 @@ function load(){
         if(!Object.keys(n.driftItems).length){n.driftItems.other=n.drift;n.per['driftItems.other']=n.per.drift||'mån';n.driftOtherAuto=true}
         n.drift=null;delete n.per.drift;
       }
+      // sparad "närmaste grundskola" som egentligen är ett gymnasium e.d. rensas och hämtas om
+      if(n.nearNames&&n.nearNames.school&&n.near&&n.near.school!=null&&!isPrimarySchool(n.nearNames.school)){
+        n.near.school=null;n.nearNames.school='';if(n.nearPts)delete n.nearPts.school;n.nearV=0;}
       delete n.other;delete n.estimate;delete n.rateOverride;delete n.name;
       return n;});
     delete s.loan;
@@ -1340,7 +1343,8 @@ function fetchNear(i){
     var hh=state.houses[i];
     PLACE_QUERIES.forEach(function(pq,n){
       var list=lists[n],k=pq.key;
-      if(!list){failed++;return}
+      // misslyckad hämtning: visa att värdet saknas i stället för ett gammalt, kanske felaktigt värde
+      if(!list){failed++;hh.near[k]=null;hh.nearNames[k]='Kunde inte hämtas – försök igen';return}
       var first=list[0];
       hh.near[k]=first?first.d:null;
       hh.nearNames[k]=first?first.name:'Inget inom '+fmtNum(NEAR_RADIUS[k],1)+' km';
@@ -1389,13 +1393,14 @@ function fetchNear(i){
 
 // Närmaste platser, sorterade efter avstånd. Photon först; svarar den inte används Nominatim
 // (som bara får frågas en gång per sekund och söker inom växande rutor runt bostaden).
-var NEAR_VERSION=5; // höjs när närhetsberäkningen ändras, så att sparade bostäder räknas om
+var NEAR_VERSION=6;
+// kartdatan skiljer inte på skolformer – gymnasier, vuxenutbildning m.m. sorteras bort på namnet
+function isPrimarySchool(name){return !/gymnasi|komvux|vuxenutb|yrkeshög|folkhög|högskola|universitet|kulturskola|musikskola|trafikskola|körskola|dansskola|simskola|språkskola|\bsfi\b|lernia|folkuniversitet|naturbruk|yrkesskola/i.test(name||'')} // höjs när närhetsberäkningen ändras, så att sparade bostäder räknas om
 var PLACE_QUERIES=[
   // livsmedelsbutiker före närbutiker/kiosker – kiosker används bara om ingen riktig butik finns
   {key:'grocery',tags:['shop:supermarket','shop:convenience'],radius:5,limit:30,nom:'supermarket',steps:[2,5],prefer:['supermarket']},
-  // kartdatan skiljer inte på skolformer – gymnasier, vuxenutbildning m.m. sorteras bort på namnet
   {key:'school',tags:['amenity:school'],radius:5,limit:40,nom:'school',steps:[2,5],
-   keep:function(p){return !/gymnasi|komvux|vuxenutb|yrkeshög|folkhög|högskola|universitet|kulturskola|musikskola|trafikskola|körskola|dansskola|simskola|språkskola|\bsfi\b|lernia|folkuniversitet|naturbruk|yrkesskola|gymnasiesärskola/i.test(p.name)}},
+   keep:function(p){return isPrimarySchool(p.name)}},
   {key:'preschool',tags:['amenity:kindergarten'],radius:5,nom:'kindergarten',steps:[2,5]},
   {key:'transit',tags:['highway:bus_stop','railway:station','railway:halt','railway:tram_stop'],radius:2.5,limit:30,nom:'bus stop',steps:[0.8,2.5],want:5},
   // stad eller tätort i första hand, by bara om inget större finns
