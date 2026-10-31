@@ -1364,13 +1364,14 @@ function fetchNear(i){
   },Promise.resolve())}).then(function(){
     if(state.houses[i].lat!==lat)return;
     // markeras klar bara om allt kom fram – annars görs ett nytt försök nästa gång sidan öppnas
-    if(!failed){state.houses[i].nearV=3;save()}
+    if(!failed){state.houses[i].nearV=NEAR_VERSION;save()}
     nearStatus(i,failed?'Vissa avstånd kunde inte hämtas (kartservern är upptagen). Tryck på knappen igen om en stund eller fyll i dem själv.':'Klart! Avstånden är fågelvägen. Ändra dem om något inte stämmer.');
   });
 }
 
 // Närmaste platser, sorterade efter avstånd. Photon först; svarar den inte används Nominatim
 // (som bara får frågas en gång per sekund och söker inom växande rutor runt bostaden).
+var NEAR_VERSION=4; // höjs när närhetsberäkningen ändras, så att sparade bostäder räknas om
 var PLACE_QUERIES=[
   {key:'grocery',tags:['shop:supermarket','shop:convenience'],radius:5,nom:'supermarket',steps:[2,5]},
   // kartdatan skiljer inte på skolformer – gymnasier, vuxenutbildning m.m. sorteras bort på namnet
@@ -1582,7 +1583,7 @@ if(!checkShare())checkHashImport();
 // bostäder vars närområde räknades ut innan platserna sparades för kartan hämtas om
 // och bostäder med adress men utan läge slås upp
 [0,1].forEach(function(i){var h=state.houses[i];
-  if(h.lat!=null&&h.nearV!==3)fetchNear(i);else if(h.lat==null&&h.address)geocode(i)});
+  if(h.lat!=null&&h.nearV!==NEAR_VERSION)fetchNear(i);else if(h.lat==null&&h.address)geocode(i)});
 window.addEventListener('hashchange',function(){if(!checkShare())checkHashImport()});
 window.addEventListener('resize',function(){if(map)map.invalidateSize()});
 })();
