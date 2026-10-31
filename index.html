@@ -262,7 +262,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
     <div class="map-tools">
       <div class="legend" id="mapLegend">
         <span class="lg"><span class="pin-mini" style="background:var(--a)">A</span><span class="pin-mini" style="background:var(--b)">B</span> Bostäderna</span>
-        <label class="lg"><input type="checkbox" data-mapshow="school"> 🏫 Skola</label>
+        <label class="lg"><input type="checkbox" data-mapshow="school"> 🏫 Grundskola (F–9)</label>
         <label class="lg"><input type="checkbox" data-mapshow="preschool"> 🧸 Förskola</label>
         <label class="lg"><input type="checkbox" data-mapshow="grocery"> 🛒 Matbutik</label>
         <label class="lg"><input type="checkbox" data-mapshow="bus"> 🚌 5 närmaste busshållplatser</label>
@@ -325,7 +325,7 @@ var FEATURES = [
   ['pool','Pool'],['garden','Trädgård'],['waterview','Sjöutsikt/sjötomt'],['solar','Solceller'],['alarm','Larm/kamera'],['newbuild','Nyproduktion']
 ];
 var NEAR = [
-  ['lake','Sjö','💧'],['forest','Skog','🌲'],['grocery','Matbutik','🛒'],['school','Skola','🏫'],
+  ['lake','Sjö','💧'],['forest','Skog','🌲'],['grocery','Matbutik','🛒'],['school','Grundskola (F–9)','🏫'],
   ['preschool','Förskola','🧸'],['transit','Kollektivtrafik','🚌'],['center','Ort/centrum','🏘️']
 ];
 // Driftkostnadens delar – anges per år eller per månad (väljs per rad)
@@ -1373,7 +1373,9 @@ function fetchNear(i){
 // (som bara får frågas en gång per sekund och söker inom växande rutor runt bostaden).
 var PLACE_QUERIES=[
   {key:'grocery',tags:['shop:supermarket','shop:convenience'],radius:5,nom:'supermarket',steps:[2,5]},
-  {key:'school',tags:['amenity:school'],radius:5,nom:'school',steps:[2,5]},
+  // kartdatan skiljer inte på skolformer – gymnasier, vuxenutbildning m.m. sorteras bort på namnet
+  {key:'school',tags:['amenity:school'],radius:5,limit:40,nom:'school',steps:[2,5],
+   keep:function(p){return !/gymnasi|komvux|vuxenutb|yrkeshög|folkhög|högskola|universitet|kulturskola|musikskola|trafikskola|körskola|dansskola|simskola|språkskola|\bsfi\b|lernia|folkuniversitet|naturbruk|yrkesskola|gymnasiesärskola/i.test(p.name)}},
   {key:'preschool',tags:['amenity:kindergarten'],radius:5,nom:'kindergarten',steps:[2,5]},
   {key:'transit',tags:['highway:bus_stop','railway:station','railway:halt','railway:tram_stop'],radius:2.5,limit:30,nom:'bus stop',steps:[0.8,2.5],want:5},
   {key:'center',tags:['place:city','place:town','place:village'],radius:20}
@@ -1411,10 +1413,12 @@ function uniqueStops(list){var seen={};return list.filter(function(s){if(s.type!
   var key=s.name||(s.lat.toFixed(4)+','+s.lon.toFixed(4));if(seen[key])return false;seen[key]=1;return true})}
 // en platstyp: Photon, annars Nominatim med större och större ruta; null = gick inte att hämta
 function placeList(lat,lon,pq){
-  return photonNear(lat,lon,pq.tags,pq.radius,pq.limit).catch(function(){
+  var keep=function(list){return list&&pq.keep?list.filter(pq.keep):list};
+  return photonNear(lat,lon,pq.tags,pq.radius,pq.limit).then(keep).catch(function(){
     if(!pq.nom)return null;
     var k=0;
     function step(){return nominatimNear(lat,lon,pq.nom,pq.steps[k]).then(function(list){
+      list=keep(list);
       var enough=pq.want?uniqueStops(list).length>=pq.want:list.length>0;
       if(enough||++k>=pq.steps.length)return list;return step()})}
     return step().catch(function(){return null});
@@ -1423,7 +1427,7 @@ function placeList(lat,lon,pq){
 
 /* ---------- Karta ---------- */
 // platser som ritas ut runt bostäderna; ringens färg visar vilken bostad de hör till
-var MAP_POI={school:{icon:'🏫',label:'Närmaste skola'},preschool:{icon:'🧸',label:'Närmaste förskola'},grocery:{icon:'🛒',label:'Närmaste matbutik'}};
+var MAP_POI={school:{icon:'🏫',label:'Närmaste grundskola'},preschool:{icon:'🧸',label:'Närmaste förskola'},grocery:{icon:'🛒',label:'Närmaste matbutik'}};
 var BUS={icon:'🚌',label:'Busshållplats'};
 var map,markers=[null,null],line=null,lastFit='',poiLayer=null,poiKey='';
 function poiIcon(i,emoji){return L.divIcon({className:'',html:'<div class="poi" style="border-color:'+(i?'var(--b)':'var(--a)')+'">'+emoji+'</div>',iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-14]})}
