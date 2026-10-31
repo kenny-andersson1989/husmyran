@@ -672,7 +672,7 @@ var SECTIONS=[
     '<div class="subhead" style="margin-top:0">Pris och lån</div>'+
     '<div class="field full"><label data-o="priceLabel">Pris</label><div class="unit"><input data-f="price" data-num inputmode="decimal"><span>kr</span></div></div>'+
     fNum('rent','Avgift / hyra','kr/mån')+
-    fMoney('propertyFee','Fastighetsavgift')+
+    fMoney('propertyFee','Fastighetsavgift','<span data-o="feeHint"></span>')+
     // lika många fält för nuvarande bostad och annonsbostad så att raderna hamnar i jämnhöjd
     '<div data-show="current" style="display:contents">'+
       fNum('existingLoan','Nuvarande lån','kr','Det du har kvar att betala')+
@@ -893,7 +893,13 @@ function renderOutputs(i){
   var downIn=hq(i,'[data-f="down"]');
   if(h.down==null&&document.activeElement!==downIn)downIn.value=c.price?fmtNum(c.down):'';
   hq(i,'[data-o="downHint"]').textContent=c.price?'Belåningsgrad '+fmtNum(c.ltv*100,1)+' %'+(c.ltv>0.9?' – över bolånetaket 90 %':(h.down==null?' (förifyllt)':'')):'Förifylls så att belåningsgraden blir 85 %';
-  hq(i,'[data-f="propertyFee"]').placeholder=h.propertyFee==null?fmtNum(perOf(h,'propertyFee')==='år'?c.autoFee:c.autoFee/12)+(c.feeFree?' (nybyggt)':' (uppsk.)'):'';
+  hq(i,'[data-f="propertyFee"]').placeholder=h.propertyFee==null?fmtNum(perOf(h,'propertyFee')==='år'?c.autoFee:c.autoFee/12)+' (uppsk.)':'';
+  // förklaring under fastighetsavgiften – alltid en rad så att kolumnerna hamnar i jämnhöjd
+  hq(i,'[data-o="feeHint"]').textContent=h.propertyFee!=null?'Ditt eget belopp':
+    c.feeFree?'Nybyggt – avgiftsfritt t.o.m. '+(h.year+14):
+    h.tenure==='Bostadsrätt'?'Betalas av föreningen via avgiften':
+    h.tenure!=='Äganderätt'?'Ingen för den här upplåtelseformen':'Uppskattad utifrån priset';
+  hq(i,'[data-o="feeHint"]').parentNode.title=c.feeFree?'Hus som är byggda 2012 eller senare betalar ingen kommunal fastighetsavgift de första 15 åren.':'';
   var dm=driftItemsMonthly(h);
   hq(i,'[data-o="driftSum"]').innerHTML='<span>Summa '+(dm!=null?kr(dm)+'/mån':'–')+'</span><span>'+(dm!=null?kr(dm*12)+'/år':'')+'</span>';
   var cm=sumMonthly(h,'costs.',COSTS);
@@ -1124,7 +1130,8 @@ function renderCompare(A,B,ca,cb){
   if(any(A.rent,B.rent))rk('Avgift / hyra',A.rent,B.rent,-1);
   var dA=driftMonthly(A),dB=driftMonthly(B);
   if(any(dA,dB))rm('Driftkostnad',dA,dB,-1);
-  rk('Fastighetsavgift',ca.fee,cb.fee,-1);
+  var feeTxt=function(h,c){return kr(c.fee)+(c.feeFree&&h.propertyFee==null?'<br><small>Avgiftsfri t.o.m. '+(h.year+14)+' (nybyggt)</small>':'')};
+  r('Fastighetsavgift',ca.fee,cb.fee,feeTxt(A,ca),feeTxt(B,cb),-1);
   COSTS.forEach(function(x){var a=monthly(A,'costs.'+x[0]),b=monthly(B,'costs.'+x[0]);if(any(a,b))rm(x[1],a,b,-1)});
   rk('Månadskostnad',ca.has?ca.total:null,cb.has?cb.total:null,-1,'total',A.deduction===B.deduction?(A.deduction?'efter ränteavdrag':'före ränteavdrag'):'A '+(A.deduction?'efter':'före')+', B '+(B.deduction?'efter':'före')+' ränteavdrag');
   rk('Månadskostnad utan amortering',ca.has?ca.totalExAmort:null,cb.has?cb.totalExAmort:null,-1,'','amorteringen är ett sparande');
