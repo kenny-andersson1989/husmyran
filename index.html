@@ -1059,16 +1059,32 @@ function photonLabel(p){
   var place=p.city||p.locality||p.district||p.county||'';
   return {title:street+(place&&place!==street?', '+place:''),sub:[p.postcode,p.type==='street'?'gata – utan husnummer':(p.type==='house'?'':p.type)].filter(Boolean).join(' · ')};
 }
+var acSeq=0;
 function photon(q,limit){
-  if(acCtl&&acCtl.abort)acCtl.abort();acCtl=window.AbortController?new AbortController():null;
-  return fetch('https://photon.komoot.io/api/?lang=default&limit='+(limit||8)+'&bbox=10.5,55,24.5,69.5&q='+encodeURIComponent(q),{signal:acCtl?acCtl.signal:undefined})
-    .then(function(r){return r.json()}).then(function(j){
+  // en ny sökning avbryter den förra; svarar inte Photon inom 6 s används Nominatim
+  var seq=++acSeq,timedOut=false;
+  if(acCtl)acCtl.abort();var ctl=acCtl=window.AbortController?new AbortController():null;
+  var tm=setTimeout(function(){timedOut=true;if(ctl)ctl.abort()},6000);
+  var src=photonDown?Promise.reject(new Error('Photon svarar inte')):
+    fetch('https://photon.komoot.io/api/?lang=default&limit='+(limit||8)+'&bbox=10.5,55,24.5,69.5&q='+encodeURIComponent(q),{signal:ctl?ctl.signal:undefined})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()});
+  return src.catch(function(e){
+    if(seq!==acSeq&&!timedOut)throw e; // ersatt av en nyare sökning
+    photonDown=true;return nominatimSearch(q,limit);
+  }).then(function(j){clearTimeout(tm);
       var seen={};
       return (j.features||[]).filter(function(f){
         if(f.properties.countrycode&&f.properties.countrycode!=='SE')return false;
         var t=photonLabel(f.properties).title;if(seen[t])return false;seen[t]=1;return true;
       }).slice(0,6);
     });
+}
+// reserv när Photon inte svarar: Nominatim, omformat till samma struktur som Photon
+function nominatimSearch(q,limit){
+  return timedFetch('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=se&limit='+(limit||6)+'&q='+encodeURIComponent(q),10000,{headers:{'Accept-Language':'sv'}})
+    .then(function(list){return {features:list.map(function(x){var a=x.address||{};
+      return {geometry:{coordinates:[+x.lon,+x.lat]},properties:{countrycode:'SE',name:x.name||a.road,street:a.road,housenumber:a.house_number,
+        city:a.city||a.town||a.village||a.municipality,district:a.suburb||a.city_district,postcode:a.postcode,type:a.house_number?'house':(x.addresstype==='road'?'street':x.addresstype)}}})}});
 }
 function hideAc(i){var l=hq(i,'[data-o="ac"]');if(l)l.hidden=true}
 function suggest(i,q){
@@ -1259,10 +1275,10 @@ function classify(tags){
   return null;
 }
 
-var OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter'];
-var NEAR_RADIUS={lake:3,forest:1.5,grocery:6,school:6,preschool:6,transit:3,center:25};
+var OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+var NEAR_RADIUS={lake:3,forest:1.5,grocery:5,school:5,preschool:5,transit:2.5,center:20};
 function overpassOnce(q,n){
-  var ctl=window.AbortController?new AbortController():null,timer=ctl&&setTimeout(function(){ctl.abort()},45000);
+  var ctl=window.AbortController?new AbortController():null,timer=ctl&&setTimeout(function(){ctl.abort()},30000);
   return fetch(OVERPASS[n],{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ctl?ctl.signal:undefined})
     .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
     .finally(function(){clearTimeout(timer)});
@@ -1272,9 +1288,10 @@ function wait(ms){return new Promise(function(r){setTimeout(r,ms)})}
 var opQueue=Promise.resolve();
 function overpass(q){
   var job=opQueue.then(function(){
+    // prova nästa kartserver om en är upptagen
     return overpassOnce(q,0)
-      .catch(function(){return wait(1500).then(function(){return overpassOnce(q,1)})})
-      .catch(function(){return wait(5000).then(function(){return overpassOnce(q,0)})});
+      .catch(function(){return wait(1000).then(function(){return overpassOnce(q,1)})})
+      .catch(function(){return wait(1000).then(function(){return overpassOnce(q,2)})});
   });
   opQueue=job.catch(function(){});
   return job;
@@ -1289,18 +1306,34 @@ function fetchNear(i){
   function bb(m){var dy=m/110540,dx=m/(111320*Math.cos(lat*Math.PI/180));return [lat-dy,lon-dx,lat+dy,lon+dx].map(function(x){return x.toFixed(5)}).join(',')}
   function A(m){return '(around:'+m+','+P+')'}
   var W='[water~"^(lake|pond|reservoir|lagoon|oxbow)$"]';
-  // Mindre frågor i tur och ordning – snabbare svar och ett fel stoppar inte resten
+  // Sjö och skog kräver områdenas form och hämtas från Overpass, en fråga i taget.
+  // Övriga platser hämtas från Photon (se photonNear), som är snabbare och mer tillgänglig.
   var parts=[
-    {keys:['grocery','school','preschool'],q:'(nwr'+A(6000)+'[shop~"^(supermarket|convenience|grocery)$"];nwr'+A(6000)+'[amenity~"^(school|kindergarten)$"];);out tags center;'},
-    {keys:['transit','center'],q:'(node'+A(3000)+'[highway=bus_stop];node'+A(3000)+'[railway~"^(station|halt|tram_stop)$"];node'+A(25000)+'[place~"^(city|town|village)$"];);out tags;'},
     {keys:['lake'],q:'(way'+A(3000)+'[natural=water]'+W+';relation'+A(3000)+'[natural=water]'+W+';way'+A(3000)+'[natural=water][!water];relation'+A(3000)+'[natural=water][!water];);out tags geom('+bb(3200)+');'},
     {keys:['forest'],q:'(way'+A(1500)+'[landuse=forest];way'+A(1500)+'[natural=wood];relation'+A(1500)+'[landuse=forest];relation'+A(1500)+'[natural=wood];);out tags geom('+bb(1700)+');'}
   ];
-  var failed=0,done=0;
+  var failed=0,done=0,total=parts.length+1;
   // platser som ritas ut på kartan fylls i allteftersom svaren kommer
   h.nearPts={};h.busStops=[];
-  nearStatus(i,'Räknar ut avstånd… (0 av '+parts.length+')',true);
-  parts.reduce(function(chain,part){
+  nearStatus(i,'Räknar ut avstånd…',true);
+  var places=Promise.all(PLACE_QUERIES.map(function(pq){return placeList(lat,lon,pq)})).then(function(lists){
+    if(state.houses[i].lat!==lat)return;
+    var hh=state.houses[i];
+    PLACE_QUERIES.forEach(function(pq,n){
+      var list=lists[n],k=pq.key;
+      if(!list){failed++;return}
+      var first=list[0];
+      hh.near[k]=first?first.d:null;
+      hh.nearNames[k]=first?first.name:'Inget inom '+fmtNum(NEAR_RADIUS[k],1)+' km';
+      if(MAP_POI[k]&&first)hh.nearPts[k]=first;
+      // de fem närmaste busshållplatserna – en per namn (hållplatser finns ofta i båda riktningarna)
+      if(k==='transit')hh.busStops=uniqueStops(list).slice(0,5);
+    });
+    save();renderHouse(i);renderAll();
+    nearStatus(i,'Platserna är klara – räknar avstånd till sjö och skog…',true);
+  }).catch(function(e){failed++;console.warn('Husmyran: platser kunde inte hämtas',e)}).then(function(){done++});
+  // sjö och skog efter platserna
+  places.then(function(){return parts.reduce(function(chain,part){
     return chain.then(function(){
       if(state.houses[i].lat!==lat)return;
       return overpass('[out:json][timeout:25];'+part.q).then(function(res){
@@ -1323,15 +1356,68 @@ function fetchNear(i){
         if(part.keys.indexOf('transit')>=0){
           var seen={};hh.busStops=bus.sort(function(a,b){return a.d-b.d}).filter(function(s){var key=s.name||(s.lat.toFixed(4)+','+s.lon.toFixed(4));if(seen[key])return false;seen[key]=1;return true}).slice(0,5);
         }
-        hh.nearV=2;
         save();renderHouse(i);renderAll();
       }).catch(function(){failed++}).then(function(){
-        done++;if(done<parts.length)nearStatus(i,'Räknar ut avstånd… ('+done+' av '+parts.length+')',true);
+        done++;if(done<total)nearStatus(i,'Platserna är klara – räknar avstånd till sjö och skog…',true);
       });
     });
-  },Promise.resolve()).then(function(){
+  },Promise.resolve())}).then(function(){
     if(state.houses[i].lat!==lat)return;
-    nearStatus(i,failed?'Vissa avstånd kunde inte hämtas (kartservern är upptagen). Försök igen om en stund eller fyll i dem själv.':'Klart! Avstånden är fågelvägen. Ändra dem om något inte stämmer.');
+    // markeras klar bara om allt kom fram – annars görs ett nytt försök nästa gång sidan öppnas
+    if(!failed){state.houses[i].nearV=3;save()}
+    nearStatus(i,failed?'Vissa avstånd kunde inte hämtas (kartservern är upptagen). Tryck på knappen igen om en stund eller fyll i dem själv.':'Klart! Avstånden är fågelvägen. Ändra dem om något inte stämmer.');
+  });
+}
+
+// Närmaste platser, sorterade efter avstånd. Photon först; svarar den inte används Nominatim
+// (som bara får frågas en gång per sekund och söker inom växande rutor runt bostaden).
+var PLACE_QUERIES=[
+  {key:'grocery',tags:['shop:supermarket','shop:convenience'],radius:5,nom:'supermarket',steps:[2,5]},
+  {key:'school',tags:['amenity:school'],radius:5,nom:'school',steps:[2,5]},
+  {key:'preschool',tags:['amenity:kindergarten'],radius:5,nom:'kindergarten',steps:[2,5]},
+  {key:'transit',tags:['highway:bus_stop','railway:station','railway:halt','railway:tram_stop'],radius:2.5,limit:30,nom:'bus stop',steps:[0.8,2.5],want:5},
+  {key:'center',tags:['place:city','place:town','place:village'],radius:20}
+];
+function timedFetch(url,ms,opt){
+  var ctl=window.AbortController?new AbortController():null,t=ctl&&setTimeout(function(){ctl.abort()},ms);
+  return fetch(url,Object.assign({signal:ctl?ctl.signal:undefined},opt||{})).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+    .finally(function(){clearTimeout(t)});
+}
+var photonDown=false;
+function photonNear(lat,lon,tags,radius,limit){
+  if(photonDown)return Promise.reject(new Error('Photon svarar inte'));
+  var url='https://photon.komoot.io/reverse?lat='+lat+'&lon='+lon+'&radius='+radius+'&limit='+(limit||10)+
+    tags.map(function(t){return '&osm_tag='+encodeURIComponent(t)}).join('');
+  return timedFetch(url,8000).then(function(j){
+    return (j.features||[]).map(function(f){var c=f.geometry.coordinates,p=f.properties;
+      return {lat:c[1],lon:c[0],name:p.name||'',type:p.osm_value,d:Math.round(haversine(lat,lon,c[1],c[0]))}})
+      .sort(function(a,b){return a.d-b.d});
+  }).catch(function(e){photonDown=true;throw e});
+}
+var nomQueue=Promise.resolve();
+function nominatimNear(lat,lon,amenity,km){
+  var job=nomQueue.then(function(){
+    var dy=km/110.54,dx=km/(111.32*Math.cos(lat*Math.PI/180));
+    return timedFetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&bounded=1&viewbox='+
+      [lon-dx,lat+dy,lon+dx,lat-dy].map(function(v){return v.toFixed(5)}).join(',')+'&amenity='+encodeURIComponent(amenity),15000,{headers:{'Accept-Language':'sv'}});
+  }).then(function(j){
+    return j.map(function(x){var la=+x.lat,lo=+x.lon;return {lat:la,lon:lo,name:x.name||'',type:x.type,d:Math.round(haversine(lat,lon,la,lo))}})
+      .filter(function(p){return p.d<=km*1000}).sort(function(a,b){return a.d-b.d});
+  });
+  nomQueue=job.catch(function(){}).then(function(){return wait(1100)});
+  return job;
+}
+function uniqueStops(list){var seen={};return list.filter(function(s){if(s.type!=='bus_stop')return false;
+  var key=s.name||(s.lat.toFixed(4)+','+s.lon.toFixed(4));if(seen[key])return false;seen[key]=1;return true})}
+// en platstyp: Photon, annars Nominatim med större och större ruta; null = gick inte att hämta
+function placeList(lat,lon,pq){
+  return photonNear(lat,lon,pq.tags,pq.radius,pq.limit).catch(function(){
+    if(!pq.nom)return null;
+    var k=0;
+    function step(){return nominatimNear(lat,lon,pq.nom,pq.steps[k]).then(function(list){
+      var enough=pq.want?uniqueStops(list).length>=pq.want:list.length>0;
+      if(enough||++k>=pq.steps.length)return list;return step()})}
+    return step().catch(function(){return null});
   });
 }
 
@@ -1490,7 +1576,9 @@ initMap();
 renderAll();
 if(!checkShare())checkHashImport();
 // bostäder vars närområde räknades ut innan platserna sparades för kartan hämtas om
-[0,1].forEach(function(i){var h=state.houses[i];if(h.lat!=null&&h.nearV!==2)fetchNear(i)});
+// och bostäder med adress men utan läge slås upp
+[0,1].forEach(function(i){var h=state.houses[i];
+  if(h.lat!=null&&h.nearV!==3)fetchNear(i);else if(h.lat==null&&h.address)geocode(i)});
 window.addEventListener('hashchange',function(){if(!checkShare())checkHashImport()});
 window.addEventListener('resize',function(){if(map)map.invalidateSize()});
 })();
