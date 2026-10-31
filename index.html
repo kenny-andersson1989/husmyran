@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Husmyran – jämför bostäder</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M8 30 32 10l24 20v24a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4z' fill='%233aa597'/%3E%3Ccircle cx='24' cy='42' r='5' fill='%23263a4a'/%3E%3Ccircle cx='33' cy='42' r='4' fill='%23263a4a'/%3E%3Ccircle cx='41' cy='40' r='5' fill='%23263a4a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#f5f8fb; --card:#ffffff; --ink:#24384a; --muted:#6b7f90; --line:#e3eaf0;
+  --brand:#3aa597; --brand-soft:#e3f4f1; --brand-ink:#22786d;
+  --a:#4a7fd4; --a-soft:#e8f0fc; --b:#e8825f; --b-soft:#fdeee8;
+  --good:#2f9e6a; --good-soft:#e2f5ea; --warn:#c98a1b;
+  --radius:16px; --shadow:0 2px 10px rgba(36,56,74,.06);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Nunito,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--brand-ink)}
+.wrap{max-width:1240px;margin:0 auto;padding:0 16px}
+header.top{background:linear-gradient(135deg,#e6f6f3 0%,#eef4fd 100%);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:14px;padding-top:16px;padding-bottom:16px}
+.logo{width:52px;height:52px;flex:none}
+.brand{flex:1;min-width:0}
+.brand h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.3px}
+.brand p{margin:0;color:var(--muted);font-size:14px}
+.top-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+main{padding:20px 0 60px}
+h2{font-size:19px;margin:0 0 12px;font-weight:800}
+h3{font-size:15px;margin:0 0 8px;font-weight:800}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+section{margin-bottom:22px}
+.btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn:hover{border-color:var(--brand)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-ink)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* Loan settings */
+.loan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;align-items:end}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.lbl{font-size:12.5px;font-weight:700;color:var(--muted)}
+.field input,.field select,.field textarea{font:inherit;color:var(--ink);background:#fbfcfd;border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%;min-width:0}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+.field .hint{font-size:12px;color:var(--muted)}
+.unit{position:relative}
+.unit input{padding-right:48px}
+.unit span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12.5px;color:var(--muted);pointer-events:none}
+.toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:8px 0}
+.toggle input{position:absolute;opacity:0;pointer-events:none}
+.toggle .sw{width:42px;height:24px;border-radius:12px;background:#d5dee6;position:relative;transition:.2s;flex:none}
+.toggle .sw::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked + .sw{background:var(--brand)}
+.toggle input:checked + .sw::after{left:21px}
+.toggle input:focus-visible + .sw{outline:2px solid var(--brand)}
+
+/* Summary */
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.sum{border-radius:var(--radius);padding:16px 18px;border:1px solid var(--line);background:#fff;position:relative;overflow:hidden}
+.sum::before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:var(--c)}
+.sum.a{--c:var(--a)} .sum.b{--c:var(--b)}
+.sum .who{font-weight:800;color:var(--c);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+.sum .name{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sum .big{font-size:30px;font-weight:800;line-height:1.1;margin-top:6px}
+.sum .big small{font-size:14px;color:var(--muted);font-weight:700}
+.sum .sub{color:var(--muted);font-size:13px}
+.verdict{grid-column:1/-1;background:var(--brand-soft);color:var(--brand-ink);border-radius:12px;padding:10px 14px;font-weight:700;text-align:center}
+
+/* Editors */
+.tabs{display:none;gap:8px;margin-bottom:12px}
+.tabs button{flex:1;padding:10px;border-radius:12px;border:2px solid var(--line);background:#fff;font:inherit;font-weight:800;cursor:pointer;color:var(--muted)}
+.tabs button.on[data-i="0"]{border-color:var(--a);color:var(--a);background:var(--a-soft)}
+.tabs button.on[data-i="1"]{border-color:var(--b);color:var(--b);background:var(--b-soft)}
+.editors{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.editor{border-top:6px solid var(--c);padding:0;overflow:hidden}
+.editor.a{--c:var(--a);--cs:var(--a-soft)} .editor.b{--c:var(--b);--cs:var(--b-soft)}
+.ed-head{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--cs)}
+.ed-head .badge{width:34px;height:34px;border-radius:50%;background:var(--c);color:#fff;font-weight:800;display:grid;place-items:center;flex:none}
+.ed-head .t{min-width:0;flex:1}
+.ed-head .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ed-head .t span{font-size:13px;color:var(--muted)}
+.ed-head .cost{text-align:right;font-weight:800;font-size:20px;white-space:nowrap}
+.ed-head .cost small{display:block;font-size:11.5px;color:var(--muted);font-weight:700}
+.ed-img{display:block;width:100%;height:170px;object-fit:cover;background:var(--line)}
+[hidden]{display:none!important}
+.ed-body{padding:4px 18px 18px}
+details.grp{border-bottom:1px solid var(--line)}
+details.grp:last-child{border-bottom:0}
+details.grp>summary{list-style:none;cursor:pointer;padding:14px 0;font-weight:800;display:flex;align-items:center;gap:8px}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary::after{content:"";margin-left:auto;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s}
+details.grp[open]>summary::after{transform:rotate(-135deg)}
+.grp-body{padding-bottom:16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.span2{grid-column:span 2}
+.full{grid-column:1/-1}
+.import-box textarea{min-height:76px;resize:vertical;font-size:13px}
+.msg{font-size:13px;border-radius:10px;padding:8px 10px;margin-top:8px;display:none}
+.msg.show{display:block}
+.msg.ok{background:var(--good-soft);color:#1f6e49}
+.msg.err{background:#fdecea;color:#a23b2a}
+.msg.info{background:#eef4fd;color:#2f5ea8}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;pointer-events:none}
+.chip span{display:inline-block;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#fbfcfd;font-size:13.5px;font-weight:700;color:var(--muted);cursor:pointer;user-select:none}
+.chip input:checked + span{background:var(--cs);border-color:var(--c);color:var(--ink)}
+.chip input:checked + span::before{content:"✓ "}
+.chip input:focus-visible + span{outline:2px solid var(--c)}
+.tag-x{display:inline-flex;align-items:center;gap:4px;padding:6px 6px 6px 12px;border-radius:999px;background:var(--cs);border:1px solid var(--c);font-size:13.5px;font-weight:700}
+.tag-x button{border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:15px;line-height:1;padding:0 4px}
+.add-feat{display:flex;gap:6px;margin-top:10px}
+.add-feat input{flex:1;font:inherit;border:1px solid var(--line);border-radius:10px;padding:6px 10px;min-width:0}
+.booli-info{margin:10px 0 0;padding:0;list-style:none;font-size:13px;color:var(--muted)}
+.booli-info li{padding:2px 0}
+.calc-list{margin:8px 0 0;font-size:13.5px}
+.calc-list div{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.calc-list div:last-child{border:0;font-weight:800}
+.near-status{font-size:13px;color:var(--muted);margin:6px 0 10px}
+
+/* Compare table */
+.cmp-wrap{overflow:hidden;padding:0}
+table.cmp{width:100%;border-collapse:collapse;font-size:14.5px;table-layout:fixed}
+table.cmp col.c1{width:38%}
+table.cmp th,table.cmp td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:break-word;hyphens:auto}
+table.cmp thead th{position:sticky;top:0;background:#fff;z-index:2;font-weight:800;border-bottom:2px solid var(--line)}
+table.cmp thead th.ha{color:var(--a)} table.cmp thead th.hb{color:var(--b)}
+table.cmp td.v{font-variant-numeric:tabular-nums;font-weight:600}
+table.cmp tr.sec td{background:#f3f7fa;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding-top:12px}
+table.cmp tr.total td{font-weight:800;font-size:16px;background:#fbfdfe}
+table.cmp td.win{background:var(--good-soft);color:#1f6e49}
+table.cmp td .yes{color:var(--good);font-weight:800}
+table.cmp td .no{color:#b5c0ca}
+table.cmp td.lab small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+
+/* Map */
+#map{height:420px;border-radius:12px;border:1px solid var(--line);z-index:0}
+.map-note{font-size:13px;color:var(--muted);margin-top:8px}
+.pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:grid;place-items:center;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.pin b{transform:rotate(45deg);color:#fff;font:800 13px Nunito,sans-serif}
+
+/* Bookmarklet help */
+.howto ol{margin:6px 0 0;padding-left:20px}
+.howto li{margin:4px 0}
+.bm-link{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:var(--brand);color:#fff;font-weight:800;text-decoration:none;cursor:grab}
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(36,56,74,.35);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
+.modal.show{display:flex}
+.modal .card{max-width:420px;width:100%}
+.modal .row{display:flex;gap:10px;margin-top:14px}
+.modal .row .btn{flex:1;justify-content:center}
+
+footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 30px}
+
+@media (max-width:899px){
+  .tabs{display:flex}
+  .editors{grid-template-columns:1fr}
+  .editor:not(.active){display:none}
+  .summary{grid-template-columns:1fr 1fr;gap:10px}
+  .sum{padding:12px 12px 12px 16px}
+  .sum .big{font-size:22px}
+  table.cmp{font-size:13.5px}
+  table.cmp th,table.cmp td{padding:8px 8px}
+  table.cmp col.c1{width:34%}
+  #map{height:320px}
+}
+@media (max-width:520px){
+  header.top .wrap{flex-wrap:wrap}
+  .top-actions{margin-left:0;width:100%;justify-content:flex-start}
+  .brand h1{font-size:22px}
+  .g3{grid-template-columns:1fr 1fr}
+  .sum .name{font-size:14px}
+  .sum .big{font-size:19px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="2" y="2" width="60" height="60" rx="16" fill="#fff"/>
+      <path d="M12 31 32 14l20 17v18a3 3 0 0 1-3 3H15a3 3 0 0 1-3-3z" fill="#3aa597"/>
+      <path d="M8 33 32 12l24 21" fill="none" stroke="#22786d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="37" y="36" width="9" height="16" rx="2" fill="#e3f4f1"/>
+      <g stroke="#24384a" stroke-width="1.8" stroke-linecap="round" fill="none">
+        <path d="M17 44l-4 4M21 45l-1 6M25 44l3 5M17 40l-4-3M21 39l0-5M24 40l4-3"/>
+        <path d="M14 36c-1-3-3-4-5-4M15 35c0-3 1-5 3-6"/>
+      </g>
+      <circle cx="16" cy="38" r="3.2" fill="#24384a"/>
+      <circle cx="21" cy="41" r="2.6" fill="#24384a"/>
+      <ellipse cx="27" cy="43" rx="4.2" ry="3.4" fill="#24384a"/>
+    </svg>
+    <div class="brand">
+      <h1>Husmyran</h1>
+      <p>Jämför två bostäder – ekonomi, egenskaper och närområde</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn small" id="btnExport" type="button">⬇ Spara fil</button>
+      <label class="btn small" for="fileImport">⬆ Öppna fil</label>
+      <input type="file" id="fileImport" accept="application/json,.json" hidden>
+      <button class="btn small" id="btnReset" type="button">↺ Börja om</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="card">
+    <h2>Lånevillkor</h2>
+    <div class="loan-grid">
+      <div class="field">
+        <label for="rate">Ränta</label>
+        <div class="unit"><input id="rate" data-g="rate" inputmode="decimal"><span>%</span></div>
+      </div>
+      <div class="field">
+        <label for="downPct">Kontantinsats (krav)</label>
+        <div class="unit"><input id="downPct" data-g="downPct" inputmode="decimal"><span>%</span></div>
+      </div>
+      <div class="field">
+        <span class="lbl">Ränteavdrag</span>
+        <label class="toggle"><input type="checkbox" id="deduction" data-g="deduction"><span class="sw"></span><span>Dra av (30 %)</span></label>
+      </div>
+    </div>
+    <p class="field" style="margin:10px 0 0"><span class="hint">Räntan räknas före ränteavdrag. Slår du på ränteavdraget dras 30 % av räntekostnaden av (21 % på räntor över 100 000 kr/år). Amorteringen följer amorteringskravet automatiskt, men du kan ändra den under varje bostad.</span></p>
+  </section>
+
+  <section>
+    <div class="summary" id="summary"></div>
+  </section>
+
+  <section>
+    <div class="tabs" id="tabs">
+      <button type="button" data-i="0" class="on">Bostad A</button>
+      <button type="button" data-i="1">Bostad B</button>
+    </div>
+    <div class="editors" id="editors"></div>
+  </section>
+
+  <section>
+    <h2>Jämförelse <small style="font-size:13px;font-weight:600;color:var(--muted)">– grönt markerar det bättre värdet</small></h2>
+    <div class="card cmp-wrap"><table class="cmp" id="cmp"></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Karta</h2>
+    <div id="map"></div>
+    <p class="map-note" id="mapNote">Läget hämtas från Booli eller från adressen. Du kan dra markörerna om läget inte stämmer.</p>
+  </section>
+
+  <section class="card howto">
+    <h2>Hämta uppgifter från Booli</h2>
+    <p style="margin-top:0">Booli skyddar sina annonser så att andra webbsidor inte kan hämta dem direkt från länken. Därför finns en <b>Husmyran-knapp</b> som du lägger bland dina bokmärken och klickar på när du är inne på annonsen.</p>
+    <h3>Dator</h3>
+    <ol>
+      <li>Dra knappen <a class="bm-link" id="bmLink" href="#" title="Dra mig till bokmärkesfältet">🐜 Till Husmyran</a> upp till webbläsarens bokmärkesfält (visa fältet med Ctrl+Shift+B).</li>
+      <li>Öppna annonsen på booli.se och klicka på bokmärket <b>Till Husmyran</b>.</li>
+      <li id="bmStep3">Uppgifterna kopieras. Klistra sedan in dem i rutan <b>”Klistra in här”</b> under Bostad A eller B.</li>
+    </ol>
+    <h3>Mobil</h3>
+    <ol>
+      <li><button class="btn small" id="btnCopyBm" type="button">Kopiera bokmärkeskoden</button> och spara ett nytt bokmärke med namnet <b>Husmyran</b> där koden klistras in som adress.</li>
+      <li>Öppna annonsen, skriv <b>Husmyran</b> i adressfältet och välj bokmärket.</li>
+      <li>Utan bokmärke: markera all text i annonsen, kopiera och klistra in den. Sidan försöker då läsa ut så mycket som möjligt.</li>
+    </ol>
+  </section>
+</main>
+
+<footer>Husmyran sparar allt i din egen webbläsare. Beräkningarna är uppskattningar – stäm av med din bank.<br>Kartdata © OpenStreetMap-bidragsgivare.</footer>
+
+<div class="modal" id="importModal" role="dialog" aria-modal="true" aria-labelledby="imTitle">
+  <div class="card">
+    <h2 id="imTitle">Lägg in bostaden</h2>
+    <p id="imText" style="margin:0;color:var(--muted)"></p>
+    <div class="row">
+      <button class="btn primary" data-to="0" type="button" style="background:var(--a);border-color:var(--a)">Som bostad A</button>
+      <button class="btn primary" data-to="1" type="button" style="background:var(--b);border-color:var(--b)">Som bostad B</button>
+    </div>
+    <div class="row"><button class="btn" data-to="-1" type="button">Avbryt</button></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ---------- Konstanter ---------- */
+var STORE_KEY = 'husmyran.v1';
+var PROPERTY_FEE_CAP = 10425; // kommunal fastighetsavgift, tak kr/år (uppskattning)
+var TYPES = ['Lägenhet','Villa','Radhus','Parhus','Kedjehus','Fritidshus','Gård','Tomt/Mark'];
+var TENURES = ['Bostadsrätt','Äganderätt','Andel i bostadsförening','Hyresrätt'];
+var HEATING = ['','Fjärrvärme','Bergvärme','Jordvärme','Luft/vattenvärmepump','Luftvärmepump','Frånluftsvärmepump','Direktverkande el','Vattenburen el','Pellets/ved','Olja','Annat'];
+var FEATURES = [
+  ['balcony','Balkong'],['patio','Uteplats'],['elevator','Hiss'],['fireplace','Öppen spis/kamin'],
+  ['heatpump','Värmepump'],['garage','Garage'],['parking','Parkering'],['storage','Förråd'],
+  ['laundry','Tvätt i bostaden'],['sauna','Bastu'],['pool','Pool'],['garden','Trädgård'],
+  ['waterview','Sjöutsikt/sjötomt'],['solar','Solceller'],['newbuild','Nyproduktion']
+];
+var NEAR = [
+  ['lake','Sjö','💧'],['forest','Skog','🌲'],['grocery','Matbutik','🛒'],['school','Skola','🏫'],
+  ['preschool','Förskola','🧸'],['transit','Kollektivtrafik','🚌'],['center','Ort/centrum','🏘️']
+];
+
+function newHouse(){
+  return {url:'',name:'',address:'',area:'',type:'Lägenhet',tenure:'Bostadsrätt',price:null,estimate:null,
+    living:null,extraArea:null,plot:null,rooms:null,year:null,floor:'',heating:'',rent:null,drift:null,other:null,
+    propertyFee:null,extraDown:null,rateOverride:null,amortMode:'auto',amortPct:null,pantbrev:null,
+    features:{},extraFeatures:[],lat:null,lon:null,near:{},nearNames:{},notes:'',image:'',booliInfo:[]};
+}
+var state = load() || {loan:{rate:3,downPct:15,deduction:false},houses:[newHouse(),newHouse()],tab:0};
+
+function load(){
+  try{var s=JSON.parse(localStorage.getItem(STORE_KEY)); if(s&&s.houses&&s.houses.length===2){
+    s.houses=s.houses.map(function(h){return Object.assign(newHouse(),h)}); return s;}}catch(e){}
+  return null;
+}
+var saveTimer;
+function save(){clearTimeout(saveTimer);saveTimer=setTimeout(function(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state))}catch(e){}},250)}
+
+/* ---------- Hjälpfunktioner ---------- */
+function $(s,r){return (r||document).querySelector(s)}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function num(v){if(v==null)return null;var s=String(v).replace(/\s| |kr/g,'').replace(',','.');if(s==='')return null;var n=parseFloat(s);return isFinite(n)?n:null}
+function fmtNum(n,dec){if(n==null||!isFinite(n))return '';return Number(n).toLocaleString('sv-SE',{maximumFractionDigits:dec==null?0:dec})}
+function kr(n){return n==null||!isFinite(n)?'–':Math.round(n).toLocaleString('sv-SE')+' kr'}
+function dist(m){if(m==null)return '–';if(m<1000)return Math.round(m/10)*10+' m';return (m/1000).toLocaleString('sv-SE',{maximumFractionDigits:1})+' km'}
+function isOwned(h){return h.tenure==='Äganderätt'}
+
+/* ---------- Kalkyl ---------- */
+function calc(h){
+  var L=state.loan, price=h.price||0;
+  var rate=h.rateOverride!=null?h.rateOverride:(L.rate||0);
+  var down=price*(L.downPct||0)/100;
+  var extra=Math.min(h.extraDown||0, Math.max(0,price-down));
+  var loan=Math.max(0,price-down-extra);
+  var ltv=price?loan/price:0;
+  var autoAmort=ltv>0.7?2:(ltv>0.5?1:0);
+  var amortPct=h.amortMode==='manual'&&h.amortPct!=null?h.amortPct:autoAmort;
+  var interestYear=loan*rate/100;
+  var deductYear=Math.min(interestYear,100000)*0.30+Math.max(0,interestYear-100000)*0.21;
+  var interest=interestYear/12;
+  var deduct=L.deduction?deductYear/12:0;
+  var amort=loan*amortPct/100/12;
+  var autoFee=isOwned(h)&&h.type!=='Tomt/Mark'?Math.min(price*0.75*0.0075,PROPERTY_FEE_CAP):0;
+  var feeYear=h.propertyFee!=null?h.propertyFee:autoFee;
+  var fee=feeYear/12;
+  var rent=h.rent||0, drift=h.drift||0, other=h.other||0;
+  var total=interest-deduct+amort+rent+drift+fee+other;
+  var lagfart=isOwned(h)&&price?price*0.015+825:0;
+  var pantbrev=isOwned(h)&&loan?Math.max(0,loan-(h.pantbrev||0))*0.02+(loan>(h.pantbrev||0)?375:0):0;
+  return {price:price,rate:rate,down:down,extra:extra,loan:loan,ltv:ltv,autoAmort:autoAmort,amortPct:amortPct,
+    interest:interest,deduct:deduct,amort:amort,fee:fee,feeYear:feeYear,autoFee:autoFee,rent:rent,drift:drift,other:other,
+    total:total,totalExAmort:total-amort,sqm:h.living?price/h.living:null,lagfart:lagfart,pantbrev:pantbrev,
+    cash:down+extra+lagfart+pantbrev,hasPrice:!!h.price};
+}
+
+/* ---------- Booli-extraktion (används även av bokmärket – måste vara fristående) ---------- */
+function extractBooli(src){
+  var t=String(src).replace(/\\+"/g,'"').replace(/\\u0026/g,'&');
+  var a=t.indexOf('"__typename":"Listing"');
+  if(a<0){a=t.indexOf('"listPrice"');a=a<0?0:Math.max(0,a-20000);}
+  var s=t.slice(a,a+80000);
+  function re(p,str){return new RegExp(p).exec(str||s)}
+  function raw(k){var m=re('"'+k+'":\\{[^{}]*?"raw":(-?[\\d.]+)');return m?+m[1]:null}
+  function val(k){var m=re('"'+k+'":(-?[\\d.]+)[,}]');return m?+m[1]:null}
+  function str(k){var m=re('"'+k+'":"([^"]*)"');return m?m[1]:null}
+  var d={husmyran:1};
+  d.price=raw('listPrice');
+  var est=re('"estimate":\\{[^{}]*?"price":\\{[^{}]*?"raw":(\\d+)');d.estimate=est?+est[1]:null;
+  d.rent=raw('rent');d.drift=raw('operatingCost');
+  d.living=raw('livingArea');d.extraArea=raw('additionalArea');d.plot=raw('plotArea');d.rooms=raw('rooms');
+  d.year=val('constructionYear');d.lat=val('latitude');d.lon=val('longitude');
+  d.address=str('streetAddress');d.area=str('descriptiveAreaName');d.type=str('objectType');d.tenure=str('tenureForm');
+  var mu=re('"municipality":\\{[^{}]*?"name":"([^"]+)"');if(mu)d.municipality=mu[1];
+  var hc=re('"housingCoop":\\{[^{}]*?"name":"([^"]+)"');d.coop=hc?hc[1]:null;
+  var ht=re('"heating":\\{[^{}]*?"value":"([^"]+)"');d.heating=ht?ht[1]:null;
+  d.floor=raw('floor');if(d.floor==null)d.floor=val('floor');
+  d.newbuild=/"isNewConstruction":true/.test(s);
+  var am=re('"amenities":\\[(.*?)\\],"');d.amenities=[];
+  if(am){var r=/"key":"(\w+)","label":"([^"]+)"/g,m;while((m=r.exec(am[1])))d.amenities.push([m[1],m[2]]);}
+  d.info=[];var ri=/"key":"(\w+)","displayText":\{[^{}]*?"markdown":"([^"]+)"/g,mi;
+  while((mi=ri.exec(t))){if(!/pageviews|propertyCalculator|daysActive|listSqmPrice/.test(mi[1]))d.info.push([mi[1],mi[2].replace(/\*\*/g,'')]);}
+  if(d.floor==null){d.info.forEach(function(x){if(x[0]==='floor'){var f=/(\d+)/.exec(x[1]);if(f)d.floor=+f[1];}});}
+  if(d.drift==null){d.info.forEach(function(x){if(x[0]==='operatingCost'){var f=/([\d\s]+)\s*kr/.exec(x[1]);if(f)d.drift=+f[1].replace(/\s/g,'');}});}
+  var og=/og:image"\s+content="([^"]+)"/.exec(t);d.image=og?og[1]:null;
+  var cn=/rel="canonical"\s+href="([^"]+)"/.exec(t);d.url=cn?cn[1]:null;
+  var id=/"booliId":"(\d+)"/.exec(s);d.booliId=id?id[1]:null;
+  d.ok=d.price!=null||d.living!=null||d.address!=null;
+  return d;
+}
+
+/* Bokmärkets huvudfunktion (körs på booli.se) */
+function bookmarkletMain(target,ex){
+  function go(html){
+    var d=ex(html);
+    if(!d.ok){alert('Husmyran hittade inga bostadsuppgifter här. Öppna en annons på booli.se och försök igen.');return}
+    d.url=d.url||location.href.split('?')[0];
+    var j=JSON.stringify(d);
+    if(/^https?:/.test(target)){window.open(target.split('#')[0]+'#import='+encodeURIComponent(j),'_blank');return}
+    var ok=function(){alert('Husmyran: Uppgifterna är kopierade!\n\nGå till Husmyran och klistra in i rutan "Klistra in här" under bostad A eller B.')};
+    var fb=function(){prompt('Kopiera texten nedan (Ctrl+C) och klistra in i Husmyran:',j)};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(j).then(ok,fb)}else fb();
+  }
+  fetch(location.href,{credentials:'include'}).then(function(r){return r.text()}).then(function(h){
+    var d=ex(h);if(d.ok)go(h);else go(document.documentElement.innerHTML)
+  }).catch(function(){go(document.documentElement.innerHTML)});
+}
+function bookmarkletCode(){
+  var target=location.href.split('#')[0];
+  return 'javascript:'+encodeURIComponent('('+bookmarkletMain.toString()+')('+JSON.stringify(target)+','+extractBooli.toString()+');void 0');
+}
+
+/* Tolka text som klistrats in från annonsen (utan bokmärke) */
+function parsePlainText(t){
+  var d={husmyran:1,amenities:[],info:[]};
+  function n(re){var m=re.exec(t);return m?num(m[1]):null}
+  d.price=n(/(?:Utropspris|Pris|Begärt pris)\s*:?\s*([\d\s ]{4,})\s*kr/i);
+  d.estimate=n(/värdering[^\d]{0,40}([\d\s ]{4,})\s*kr/i);
+  d.living=n(/Boarea\s*:?\s*([\d,]+)\s*m/i)||n(/([\d,]+)\s*m²\s*boarea/i);
+  d.extraArea=n(/Biarea\s*:?\s*([\d,]+)\s*m/i);
+  d.plot=n(/Tomt(?:area|storlek)?\s*:?\s*([\d\s ,]+)\s*m/i);
+  d.rooms=n(/([\d,]+)\s*rum/i);
+  d.rent=n(/(?:Avgift|Månadsavgift)(?:en)?\s*(?:är)?\s*:?\s*([\d\s ]+)\s*kr/i);
+  d.drift=n(/Drift(?:s)?kostnad(?:en)?\s*(?:är)?\s*:?\s*([\d\s ]+)\s*kr/i);
+  d.year=n(/Bygg(?:år|des)\s*:?\s*(?:år\s*)?(\d{4})/i);
+  var fl=/våning\s*(\d+)/i.exec(t);if(fl)d.floor=+fl[1];
+  var tp=/^\s*(Lägenhet|Villa|Radhus|Parhus|Kedjehus|Fritidshus|Gård|Tomt\/Mark)\s*·\s*([^·\n]+)(?:·\s*([^\n]+))?$/m.exec(t);
+  if(tp){d.type=tp[1];d.area=tp[2].trim();if(tp[3])d.municipality=tp[3].trim();
+    var lines=t.split(/\n/).map(function(x){return x.trim()}).filter(Boolean);
+    var i=lines.findIndex(function(x){return x.indexOf(tp[0].trim())===0});
+    if(i>0)d.address=lines[i-1];}
+  if(/bostadsrätt/i.test(t))d.tenure='Bostadsrätt';else if(/äganderätt/i.test(t))d.tenure='Äganderätt';
+  var kw=[['balcony',/balkong/i],['patio',/uteplats|altan|terrass/i],['elevator',/\bhiss\b/i],['fireplace',/öppen spis|kakelugn|kamin/i],
+    ['heatpump',/värmepump|bergvärme|jordvärme/i],['garage',/garage/i],['parking',/parkering|carport/i],['storage',/förråd/i],
+    ['sauna',/bastu/i],['pool',/\bpool\b/i],['garden',/trädgård/i],['waterview',/sjöutsikt|sjötomt|strandtomt/i],['solar',/solcell/i]];
+  kw.forEach(function(k){if(k[1].test(t))d.amenities.push([k[0],'']);});
+  var h=/(fjärrvärme|bergvärme|jordvärme|luft\/vattenvärmepump|luftvärmepump|frånluftsvärmepump|direktverkande el|vattenburen el|pellets)/i.exec(t);
+  if(h)d.heating=h[1];
+  var url=/https?:\/\/(?:www\.)?booli\.se\/(?:annons|bostad)\/\d+/.exec(t);if(url)d.url=url[0];
+  d.ok=d.price!=null||d.living!=null||d.rent!=null;
+  return d;
+}
+
+function mapHeating(v){
+  if(!v)return '';
+  var s=v.toLowerCase();
+  var pairs=[[/pump-air-water|luft\/vatten/,'Luft/vattenvärmepump'],[/pump-air|luftvärme/,'Luftvärmepump'],[/pump-exhaust|frånluft/,'Frånluftsvärmepump'],
+    [/geo|rock|berg/,'Bergvärme'],[/ground|jord/,'Jordvärme'],[/district|fjärr/,'Fjärrvärme'],[/water-?borne|vattenburen/,'Vattenburen el'],
+    [/electric|direkt/,'Direktverkande el'],[/pellet|wood|ved/,'Pellets/ved'],[/oil|olja/,'Olja']];
+  for(var i=0;i<pairs.length;i++)if(pairs[i][0].test(s))return pairs[i][1];
+  return 'Annat';
+}
+
+function applyImport(i,d){
+  var h=state.houses[i];
+  var setIf=function(k,v){if(v!=null&&v!=='')h[k]=v};
+  setIf('price',d.price);setIf('estimate',d.estimate);setIf('rent',d.rent);setIf('drift',d.drift);
+  setIf('living',d.living);setIf('extraArea',d.extraArea);setIf('plot',d.plot);setIf('rooms',d.rooms);setIf('year',d.year);
+  if(d.floor!=null)h.floor=String(d.floor);
+  if(d.address){h.address=d.address+(d.municipality?', '+d.municipality:'');h.name=d.address;}
+  setIf('area',d.area);setIf('image',d.image);setIf('url',d.url);
+  if(d.type){var ty=TYPES.filter(function(x){return x.toLowerCase()===String(d.type).toLowerCase()})[0];h.type=ty||(/lägenhet/i.test(d.type)?'Lägenhet':d.type);}
+  if(d.tenure){var tn=TENURES.filter(function(x){return x.toLowerCase()===String(d.tenure).toLowerCase()})[0];if(tn)h.tenure=tn;}
+  else if(d.type&&h.type!=='Lägenhet')h.tenure='Äganderätt';
+  if(d.heating){h.heating=mapHeating(d.heating);if(/pump|värmepump|berg|jord|geo/i.test(d.heating))h.features.heatpump=true;}
+  if(d.newbuild)h.features.newbuild=true;
+  var known={};FEATURES.forEach(function(f){known[f[0]]=1});
+  var alias={elevator:'elevator',balcony:'balcony',patio:'patio',fireplace:'fireplace',openFireplace:'fireplace',garage:'garage',parking:'parking',
+    parkingSpace:'parking',sauna:'sauna',pool:'pool',storage:'storage',garden:'garden',seaView:'waterview',waterView:'waterview',solarPanels:'solar',heatPump:'heatpump'};
+  (d.amenities||[]).forEach(function(a){
+    var k=alias[a[0]]||a[0];
+    if(known[k])h.features[k]=true;
+    else if(a[1]&&h.extraFeatures.indexOf(a[1])<0)h.extraFeatures.push(a[1]);
+  });
+  if(d.info&&d.info.length)h.booliInfo=d.info.map(function(x){return x[1]}).slice(0,12);
+  if(d.coop)h.booliInfo.unshift('Förening: '+d.coop);
+  if(d.lat!=null&&d.lon!=null){var moved=h.lat!==d.lat||h.lon!==d.lon;h.lat=d.lat;h.lon=d.lon;if(moved){h.near={};h.nearNames={};}}
+  save();renderEditor(i);renderAll();
+  if(h.lat!=null)fetchNear(i);else if(h.address)geocode(i);
+}
+
+/* ---------- Redigerare ---------- */
+function opt(list,sel){return list.map(function(x){return '<option'+(x===sel?' selected':'')+' value="'+esc(x)+'">'+esc(x||'Okänt')+'</option>'}).join('')}
+function fNum(key,label,unit,hint,cls){
+  return '<div class="field '+(cls||'')+'"><label>'+label+'</label><div class="unit"><input data-f="'+key+'" data-num inputmode="decimal"><span>'+(unit||'')+'</span></div>'+(hint?'<span class="hint" data-hint="'+key+'">'+hint+'</span>':'')+'</div>';
+}
+function fText(key,label,cls,ph){return '<div class="field '+(cls||'')+'"><label>'+label+'</label><input data-f="'+key+'" placeholder="'+esc(ph||'')+'"></div>'}
+
+function editorHTML(i){
+  var L=i?'B':'A';
+  return ''+
+  '<div class="ed-head"><div class="badge">'+L+'</div><div class="t"><b data-o="title"></b><span data-o="subtitle"></span></div>'+
+    '<div class="cost"><span data-o="cost"></span><small>per månad</small></div></div>'+
+  '<img class="ed-img" data-o="img" alt="" hidden>'+
+  '<div class="ed-body">'+
+  '<details class="grp" open><summary>📋 Hämta från Booli</summary><div class="grp-body import-box">'+
+    '<div class="field"><label>Länk till annonsen</label><input data-f="url" placeholder="https://www.booli.se/annons/…" inputmode="url"></div>'+
+    '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><a class="btn small" data-o="openLink" target="_blank" rel="noopener" hidden>Öppna annonsen ↗</a></div>'+
+    '<div class="field" style="margin-top:10px"><label>Klistra in här</label><textarea data-paste placeholder="Klistra in det som Husmyran-bokmärket kopierade – eller all text från annonsen"></textarea></div>'+
+    '<div class="msg" data-o="msg"></div>'+
+  '</div></details>'+
+  '<details class="grp" open><summary>🏠 Bostaden</summary><div class="grp-body"><div class="g2">'+
+    fText('name','Namn','full','T.ex. Lägenheten på Frejgatan')+
+    fText('address','Adress','span2','Gata, ort')+
+    fText('area','Område')+
+    '<div class="field"><label>Typ</label><select data-f="type">'+opt(TYPES)+'</select></div>'+
+    '<div class="field"><label>Upplåtelseform</label><select data-f="tenure">'+opt(TENURES)+'</select></div>'+
+    fNum('price','Pris','kr')+
+    fNum('estimate','Boolis värdering','kr')+
+    fNum('living','Boarea','m²')+fNum('extraArea','Biarea','m²')+
+    fNum('rooms','Rum','rum')+fNum('plot','Tomtarea','m²')+
+    fNum('year','Byggår','')+fText('floor','Våning')+
+    '<div class="field full"><label>Uppvärmning</label><select data-f="heating">'+opt(HEATING)+'</select></div>'+
+  '</div></div></details>'+
+  '<details class="grp" open><summary>💰 Ekonomi</summary><div class="grp-body"><div class="g2">'+
+    fNum('rent','Avgift / hyra','kr/mån')+
+    fNum('drift','Driftkostnad','kr/mån','El, värme, vatten m.m. enligt annonsen')+
+    fNum('other','Övrigt','kr/mån','T.ex. försäkring, el, parkering')+
+    fNum('propertyFee','Fastighetsavgift','kr/år','','')+
+    fNum('extraDown','Extra kontantinsats','kr','Utöver kravet på kontantinsats')+
+    fNum('rateOverride','Egen ränta','%','Tomt = samma som ovan')+
+    '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå</option></select></div>'+
+    fNum('amortPct','Amortering','% /år','')+
+    fNum('pantbrev','Befintliga pantbrev','kr','Sänker kostnaden för nya pantbrev')+
+  '</div><div class="calc-list" data-o="calc"></div></div></details>'+
+  '<details class="grp"><summary>✨ Egenskaper</summary><div class="grp-body"><div class="chips">'+
+    FEATURES.map(function(f){return '<label class="chip"><input type="checkbox" data-feat="'+f[0]+'"><span>'+f[1]+'</span></label>'}).join('')+
+  '</div><div class="chips" data-o="extraFeat" style="margin-top:10px"></div>'+
+  '<div class="add-feat"><input data-o="featInput" placeholder="Lägg till egen egenskap, t.ex. Gästhus"><button class="btn small" type="button" data-act="addFeat">Lägg till</button></div>'+
+  '<ul class="booli-info" data-o="booliInfo"></ul></div></details>'+
+  '<details class="grp"><summary>🌲 Närhet</summary><div class="grp-body">'+
+    '<div class="near-status" data-o="nearStatus"></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn small" type="button" data-act="near">Räkna ut avstånd</button><button class="btn small" type="button" data-act="geocode">Hitta läget från adressen</button></div>'+
+    '<div class="g3">'+NEAR.map(function(n){return '<div class="field"><label>'+n[2]+' '+n[1]+'</label><div class="unit"><input data-near="'+n[0]+'" inputmode="numeric"><span>m</span></div><span class="hint" data-nearname="'+n[0]+'"></span></div>'}).join('')+'</div>'+
+  '</div></details>'+
+  '<details class="grp"><summary>📝 Anteckningar</summary><div class="grp-body"><div class="field"><textarea data-f="notes" rows="4" placeholder="Känsla från visningen, renoveringsbehov, frågor till mäklaren…"></textarea></div>'+
+    '<div style="margin-top:12px"><button class="btn small" type="button" data-act="clear">Töm bostad '+L+'</button></div></div></details>'+
+  '</div>';
+}
+
+function buildEditors(){
+  var box=$('#editors');box.innerHTML='';
+  [0,1].forEach(function(i){
+    var el=document.createElement('div');
+    el.className='card editor '+(i?'b':'a')+(state.tab===i?' active':'');
+    el.dataset.i=i;el.innerHTML=editorHTML(i);box.appendChild(el);
+    bindEditor(el,i);renderEditor(i);
+  });
+}
+
+function bindEditor(el,i){
+  el.addEventListener('input',function(e){
+    var t=e.target,h=state.houses[i];
+    if(t.dataset.f){
+      var k=t.dataset.f;
+      h[k]=t.hasAttribute('data-num')?num(t.value):t.value;
+      if(k==='address'){h._addrDirty=true}
+      save();renderAll();renderEditorOutputs(i);
+    }else if(t.dataset.near){
+      h.near[t.dataset.near]=num(t.value);h.nearNames[t.dataset.near]='';save();renderAll();
+    }else if(t.hasAttribute('data-paste')){
+      handlePaste(i,t);
+    }
+  });
+  el.addEventListener('change',function(e){
+    var t=e.target,h=state.houses[i];
+    if(t.dataset.feat){h.features[t.dataset.feat]=t.checked;save();renderAll();}
+    if(t.dataset.f==='amortMode'){renderEditorOutputs(i)}
+    if(t.dataset.f==='address'&&h._addrDirty){h._addrDirty=false;if(h.address)geocode(i)}
+  });
+  el.addEventListener('focusout',function(e){
+    var t=e.target;if(t.hasAttribute&&t.hasAttribute('data-num')){var v=state.houses[i][t.dataset.f];t.value=v==null?'':fmtNum(v,2)}
+  });
+  el.addEventListener('click',function(e){
+    var b=e.target.closest('[data-act]');if(!b)return;var h=state.houses[i];
+    if(b.dataset.act==='addFeat'){var inp=$('[data-o="featInput"]',el),v=inp.value.trim();if(v&&h.extraFeatures.indexOf(v)<0){h.extraFeatures.push(v);inp.value='';save();renderEditorOutputs(i);renderAll();}}
+    if(b.dataset.act==='rmFeat'){h.extraFeatures.splice(+b.dataset.n,1);save();renderEditorOutputs(i);renderAll();}
+    if(b.dataset.act==='near')fetchNear(i);
+    if(b.dataset.act==='geocode')geocode(i);
+    if(b.dataset.act==='clear'&&confirm('Töm alla uppgifter för bostad '+(i?'B':'A')+'?')){state.houses[i]=newHouse();save();renderEditor(i);renderAll();}
+  });
+  $('[data-o="featInput"]',el).addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('[data-act="addFeat"]',el).click()}});
+}
+
+function showMsg(i,type,text){
+  var m=$('.editor[data-i="'+i+'"] [data-o="msg"]');if(!m)return;
+  m.className='msg show '+type;m.textContent=text;
+}
+
+function handlePaste(i,ta){
+  var v=ta.value.trim();if(!v)return;
+  var d=null;
+  if(/^\{[\s\S]*\}$/.test(v)){try{var j=JSON.parse(v);if(j&&j.husmyran)d=j}catch(e){}}
+  if(!d&&/__typename|listPrice/.test(v))d=extractBooli(v);
+  if(!d&&/^https?:\/\/\S+$/.test(v)){
+    state.houses[i].url=v;save();renderEditor(i);
+    showMsg(i,'info','Länken är sparad. Booli låter inte andra sidor läsa annonsen direkt, så öppna annonsen och klicka på Husmyran-bokmärket (se instruktionen längre ner).');
+    ta.value='';return;
+  }
+  if(!d)d=parsePlainText(v);
+  ta.value='';
+  if(!d||!d.ok){showMsg(i,'err','Hittade inga bostadsuppgifter i texten. Prova Husmyran-bokmärket i stället.');return}
+  applyImport(i,d);
+  var got=[];if(d.price)got.push('pris');if(d.rent)got.push('avgift');if(d.drift)got.push('drift');if(d.living)got.push('boarea');if(d.lat)got.push('läge');
+  showMsg(i,'ok','Klart! Hämtade '+(got.length?got.join(', '):'uppgifter')+'. Kontrollera gärna fälten och fyll i det som saknas.');
+}
+
+function renderEditor(i){
+  var el=$('.editor[data-i="'+i+'"]');if(!el)return;var h=state.houses[i];
+  $$('[data-f]',el).forEach(function(inp){var v=h[inp.dataset.f];
+    if(inp.hasAttribute('data-num'))inp.value=v==null?'':fmtNum(v,2);else inp.value=v==null?'':v;});
+  $$('[data-feat]',el).forEach(function(c){c.checked=!!h.features[c.dataset.feat]});
+  $$('[data-near]',el).forEach(function(inp){var v=h.near[inp.dataset.near];inp.value=v==null?'':Math.round(v)});
+  renderEditorOutputs(i);
+}
+
+function renderEditorOutputs(i){
+  var el=$('.editor[data-i="'+i+'"]');if(!el)return;var h=state.houses[i],c=calc(h);
+  $('[data-o="title"]',el).textContent=h.name||h.address||('Bostad '+(i?'B':'A'));
+  $('[data-o="subtitle"]',el).textContent=[h.type,h.living?fmtNum(h.living,1)+' m²':'',h.rooms?fmtNum(h.rooms,1)+' rum':'',h.area].filter(Boolean).join(' · ');
+  $('[data-o="cost"]',el).textContent=c.hasPrice||c.rent?kr(c.total):'–';
+  var img=$('[data-o="img"]',el);if(h.image){img.src=h.image;img.hidden=false}else img.hidden=true;
+  var ol=$('[data-o="openLink"]',el);if(/^https?:\/\//.test(h.url||'')){ol.href=h.url;ol.hidden=false}else ol.hidden=true;
+  var amortInp=$('[data-f="amortPct"]',el);amortInp.disabled=h.amortMode!=='manual';
+  if(h.amortMode!=='manual'){amortInp.value='';amortInp.placeholder=fmtNum(c.autoAmort)+' (automatiskt)'}
+  var feeInp=$('[data-f="propertyFee"]',el);feeInp.placeholder=h.propertyFee==null?fmtNum(c.autoFee)+' (uppskattat)':'';
+  $('[data-o="calc"]',el).innerHTML=!c.hasPrice?'<div><span>Fyll i pris för att räkna ut lånet</span><span></span></div>':
+    row('Kontantinsats '+fmtNum(state.loan.downPct,1)+' %',kr(c.down))+
+    (c.extra?row('Extra kontantinsats',kr(c.extra)):'')+
+    row('Lån ('+fmtNum(c.ltv*100,1)+' % belåning)',kr(c.loan))+
+    row('Ränta '+fmtNum(c.rate,2)+' %',kr(c.interest)+'/mån')+
+    (state.loan.deduction?row('Ränteavdrag','−'+kr(c.deduct)+'/mån'):'')+
+    row('Amortering '+fmtNum(c.amortPct,1)+' %',kr(c.amort)+'/mån')+
+    (c.fee?row('Fastighetsavgift',kr(c.fee)+'/mån'):'')+
+    row('Månadskostnad',kr(c.total));
+  function row(a,b){return '<div><span>'+esc(a)+'</span><span>'+esc(b)+'</span></div>'}
+  $('[data-o="extraFeat"]',el).innerHTML=h.extraFeatures.map(function(f,n){return '<span class="tag-x">'+esc(f)+'<button type="button" data-act="rmFeat" data-n="'+n+'" aria-label="Ta bort">×</button></span>'}).join('');
+  $('[data-o="booliInfo"]',el).innerHTML=(h.booliInfo||[]).length?'<li><b>Från annonsen:</b></li>'+h.booliInfo.map(function(x){return '<li>• '+esc(x)+'</li>'}).join(''):'';
+  NEAR.forEach(function(n){var s=$('[data-nearname="'+n[0]+'"]',el);if(s)s.textContent=h.nearNames[n[0]]||''});
+  var st=$('[data-o="nearStatus"]',el);
+  if(!st.dataset.busy)st.textContent=h.lat!=null?'Avstånden räknas fågelvägen från bostadens läge. Du kan ändra dem själv.':'Läget saknas. Hämta från Booli eller skriv in adressen ovan.';
+}
+
+/* ---------- Sammanfattning & jämförelse ---------- */
+function renderAll(){
+  var A=state.houses[0],B=state.houses[1],ca=calc(A),cb=calc(B);
+  var sumHTML=[0,1].map(function(i){var h=state.houses[i],c=i?cb:ca;
+    return '<div class="sum '+(i?'b':'a')+'"><div class="who">Bostad '+(i?'B':'A')+'</div><div class="name">'+esc(h.name||h.address||'Ej ifylld')+'</div>'+
+      '<div class="big">'+(c.hasPrice||c.rent?kr(c.total):'–')+' <small>/mån</small></div>'+
+      '<div class="sub">'+(c.hasPrice?kr(c.price)+(h.living?' · '+kr(c.sqm)+'/m²':''):'Pris saknas')+'</div></div>';}).join('');
+  var verdict='';
+  if((ca.hasPrice||ca.rent)&&(cb.hasPrice||cb.rent)){
+    var d=ca.total-cb.total;
+    verdict=Math.abs(d)<1?'Bostäderna kostar lika mycket per månad.':
+      'Bostad '+(d>0?'B':'A')+' är '+kr(Math.abs(d))+' billigare per månad ('+kr(Math.abs(d)*12)+' per år).';
+  }
+  $('#summary').innerHTML=sumHTML+(verdict?'<div class="verdict">'+verdict+'</div>':'');
+  [0,1].forEach(function(i){var el=$('.editor[data-i="'+i+'"]');if(el){var c=i?cb:ca;$('[data-o="cost"]',el).textContent=c.hasPrice||c.rent?kr(c.total):'–'}});
+  renderCompare(A,B,ca,cb);
+  updateMap();
+}
+
+function renderCompare(A,B,ca,cb){
+  var rows=[];
+  function sec(t){rows.push('<tr class="sec"><td colspan="3">'+t+'</td></tr>')}
+  // dir: -1 lägre är bättre, 1 högre är bättre, 0 ingen markering
+  function r(label,va,vb,fa,fb,dir,cls,sub){
+    var wa='',wb='';
+    if(dir&&va!=null&&vb!=null&&isFinite(va)&&isFinite(vb)&&Math.abs(va-vb)>1e-9){
+      if((va<vb)===(dir<0))wa=' win';else wb=' win';
+    }
+    rows.push('<tr class="'+(cls||'')+'"><td class="lab">'+label+(sub?'<small>'+sub+'</small>':'')+'</td><td class="v'+wa+'">'+fa+'</td><td class="v'+wb+'">'+fb+'</td></tr>');
+  }
+  function money(label,ka,dir,cls,sub){r(label,ka(ca,A),ka(cb,B),kr(ka(ca,A)),kr(ka(cb,B)),dir,cls,sub)}
+  function hasP(c){return c.hasPrice}
+  sec('Ekonomi');
+  r('Pris',ca.price||null,cb.price||null,hasP(ca)?kr(ca.price):'–',hasP(cb)?kr(cb.price):'–',-1);
+  r('Boolis värdering',A.estimate,B.estimate,A.estimate?kr(A.estimate):'–',B.estimate?kr(B.estimate):'–',0);
+  r('Pris per m²',ca.sqm,cb.sqm,ca.sqm?kr(ca.sqm):'–',cb.sqm?kr(cb.sqm):'–',-1);
+  money('Kontantinsats '+fmtNum(state.loan.downPct,1)+' %',function(c){return c.down},0);
+  r('Extra kontantinsats',ca.extra,cb.extra,kr(ca.extra),kr(cb.extra),0);
+  r('Lånebelopp',ca.loan,cb.loan,kr(ca.loan)+'<br><small>'+fmtNum(ca.ltv*100,1)+' % belåning</small>',kr(cb.loan)+'<br><small>'+fmtNum(cb.ltv*100,1)+' % belåning</small>',-1);
+  r('Ränta',ca.interest,cb.interest,kr(ca.interest),kr(cb.interest),-1,'',fmtNum(ca.rate,2)+' % / '+fmtNum(cb.rate,2)+' %');
+  if(state.loan.deduction)r('Ränteavdrag',ca.deduct,cb.deduct,'−'+kr(ca.deduct),'−'+kr(cb.deduct),0);
+  r('Amortering',ca.amort,cb.amort,kr(ca.amort)+'<br><small>'+fmtNum(ca.amortPct,1)+' %/år</small>',kr(cb.amort)+'<br><small>'+fmtNum(cb.amortPct,1)+' %/år</small>',-1);
+  // saknade värden jämförs inte (0 kr betyder ofta "ej ifyllt")
+  r('Avgift / hyra',A.rent,B.rent,A.rent!=null?kr(A.rent):'–',B.rent!=null?kr(B.rent):'–',-1);
+  r('Driftkostnad',A.drift,B.drift,A.drift!=null?kr(A.drift):'–',B.drift!=null?kr(B.drift):'–',-1);
+  money('Fastighetsavgift',function(c){return c.fee},-1);
+  money('Övrigt',function(c){return c.other},-1);
+  r('Månadskostnad',ca.total,cb.total,kr(ca.total),kr(cb.total),-1,'total',state.loan.deduction?'efter ränteavdrag':'före ränteavdrag');
+  money('Månadskostnad utan amortering',function(c){return c.totalExAmort},-1,'','amorteringen är ett sparande');
+  money('Lagfart + pantbrev (engång)',function(c){return c.lagfart+c.pantbrev},-1,'','gäller äganderätt');
+  money('Kontanter som behövs',function(c){return c.cash},-1,'','insats + engångskostnader');
+
+  sec('Bostaden');
+  r('Typ',null,null,esc(A.type),esc(B.type),0);
+  r('Upplåtelseform',null,null,esc(A.tenure),esc(B.tenure),0);
+  r('Område',null,null,esc(A.area||'–'),esc(B.area||'–'),0);
+  r('Boarea',A.living,B.living,A.living?fmtNum(A.living,1)+' m²':'–',B.living?fmtNum(B.living,1)+' m²':'–',1);
+  r('Biarea',A.extraArea,B.extraArea,A.extraArea?fmtNum(A.extraArea,1)+' m²':'–',B.extraArea?fmtNum(B.extraArea,1)+' m²':'–',1);
+  r('Rum',A.rooms,B.rooms,A.rooms?fmtNum(A.rooms,1):'–',B.rooms?fmtNum(B.rooms,1):'–',1);
+  r('Tomtarea',A.plot,B.plot,A.plot?fmtNum(A.plot)+' m²':'–',B.plot?fmtNum(B.plot)+' m²':'–',1);
+  r('Byggår',A.year,B.year,A.year||'–',B.year||'–',1);
+  r('Våning',null,null,esc(A.floor||'–'),esc(B.floor||'–'),0);
+  r('Uppvärmning',null,null,esc(A.heating||'–'),esc(B.heating||'–'),0);
+
+  sec('Egenskaper');
+  var yes='<span class="yes">✓ Ja</span>',no='<span class="no">–</span>';
+  FEATURES.forEach(function(f){
+    var a=!!A.features[f[0]],b=!!B.features[f[0]];
+    if(a||b)r(f[1],a?1:0,b?1:0,a?yes:no,b?yes:no,1);
+  });
+  var extras=[];A.extraFeatures.concat(B.extraFeatures).forEach(function(x){if(extras.indexOf(x)<0)extras.push(x)});
+  extras.forEach(function(x){var a=A.extraFeatures.indexOf(x)>=0,b=B.extraFeatures.indexOf(x)>=0;r(esc(x),a?1:0,b?1:0,a?yes:no,b?yes:no,1)});
+  if(!FEATURES.some(function(f){return A.features[f[0]]||B.features[f[0]]})&&!extras.length)rows.push('<tr><td colspan="3" style="color:var(--muted)">Inga egenskaper ifyllda ännu.</td></tr>');
+
+  sec('Närhet');
+  NEAR.forEach(function(n){
+    var a=A.near[n[0]],b=B.near[n[0]];
+    var fa=a==null?(A.nearNames[n[0]]?'<small>'+esc(A.nearNames[n[0]])+'</small>':'–'):dist(a)+(A.nearNames[n[0]]?'<br><small>'+esc(A.nearNames[n[0]])+'</small>':'');
+    var fb=b==null?(B.nearNames[n[0]]?'<small>'+esc(B.nearNames[n[0]])+'</small>':'–'):dist(b)+(B.nearNames[n[0]]?'<br><small>'+esc(B.nearNames[n[0]])+'</small>':'');
+    r(n[2]+' '+n[1],a,b,fa,fb,-1);
+  });
+  if(A.lat!=null&&B.lat!=null)r('Avstånd mellan bostäderna',null,null,dist(haversine(A.lat,A.lon,B.lat,B.lon)),'',0);
+
+  if(A.notes||B.notes){sec('Anteckningar');r('Anteckningar',null,null,esc(A.notes).replace(/\n/g,'<br>'),esc(B.notes).replace(/\n/g,'<br>'),0)}
+
+  var ha=esc(A.name||A.address||'Bostad A'),hb=esc(B.name||B.address||'Bostad B');
+  $('#cmp').innerHTML='<colgroup><col class="c1"><col><col></colgroup><thead><tr><th></th><th class="ha">A · '+ha+'</th><th class="hb">B · '+hb+'</th></tr></thead><tbody>'+rows.join('')+'</tbody>';
+}
+
+/* ---------- Geografi ---------- */
+function haversine(a,b,c,d){var R=6371000,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,s=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)*Math.sin(y/2);return 2*R*Math.asin(Math.sqrt(s))}
+// Avstånd punkt–linjesegment i lokal plan projektion (meter)
+function segDist(px,py,ax,ay,bx,by){var dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy,t=l?((px-ax)*dx+(py-ay)*dy)/l:0;t=Math.max(0,Math.min(1,t));var x=ax+t*dx-px,y=ay+t*dy-py;return Math.sqrt(x*x+y*y)}
+function geomDistance(lat,lon,geom){
+  var kx=111320*Math.cos(lat*Math.PI/180),ky=110540,min=Infinity;
+  var pts=geom.map(function(g){return [(g.lon-lon)*kx,(g.lat-lat)*ky]});
+  for(var i=0;i<pts.length;i++){
+    if(i>0)min=Math.min(min,segDist(0,0,pts[i-1][0],pts[i-1][1],pts[i][0],pts[i][1]));
+    else min=Math.min(min,Math.sqrt(pts[0][0]*pts[0][0]+pts[0][1]*pts[0][1]));
+  }
+  // innanför ett slutet område = 0
+  if(pts.length>3&&geom[0].lat===geom[geom.length-1].lat&&geom[0].lon===geom[geom.length-1].lon){
+    var inside=false;for(var j=0,k=pts.length-1;j<pts.length;k=j++){var xi=pts[j][0],yi=pts[j][1],xk=pts[k][0],yk=pts[k][1];
+      if(((yi>0)!==(yk>0))&&(0<(xk-xi)*(0-yi)/(yk-yi)+xi))inside=!inside;}
+    if(inside)min=0;
+  }
+  return min;
+}
+function classify(tags){
+  if(!tags)return null;
+  if(tags.natural==='water')return 'lake';
+  if(tags.landuse==='forest'||tags.natural==='wood')return 'forest';
+  if(tags.shop)return 'grocery';
+  if(tags.amenity==='kindergarten')return 'preschool';
+  if(tags.amenity==='school')return 'school';
+  if(tags.highway==='bus_stop'||tags.railway||tags.public_transport)return 'transit';
+  if(tags.place)return 'center';
+  return null;
+}
+
+var OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter'];
+var NEAR_RADIUS={lake:3,forest:1.5,grocery:6,school:6,preschool:6,transit:3,center:25};
+function overpassOnce(q,n){
+  var ctl=window.AbortController?new AbortController():null,timer=ctl&&setTimeout(function(){ctl.abort()},45000);
+  return fetch(OVERPASS[n],{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ctl?ctl.signal:undefined})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+    .finally(function(){clearTimeout(timer)});
+}
+function wait(ms){return new Promise(function(r){setTimeout(r,ms)})}
+// Kartservrarna tillåter få samtidiga anrop – kör ett i taget och försök igen vid fel
+var opQueue=Promise.resolve();
+function overpass(q){
+  var job=opQueue.then(function(){
+    return overpassOnce(q,0)
+      .catch(function(){return wait(1500).then(function(){return overpassOnce(q,1)})})
+      .catch(function(){return wait(5000).then(function(){return overpassOnce(q,0)})});
+  });
+  opQueue=job.catch(function(){});
+  return job;
+}
+function nearStatus(i,text,busy){
+  var st=$('.editor[data-i="'+i+'"] [data-o="nearStatus"]');if(!st)return;
+  st.textContent=text;if(busy)st.dataset.busy='1';else delete st.dataset.busy;
+}
+function fetchNear(i){
+  var h=state.houses[i];if(h.lat==null){nearStatus(i,'Läget saknas – fyll i adressen först.');return}
+  var lat=h.lat,lon=h.lon,P=lat+','+lon;
+  function bb(m){var dy=m/110540,dx=m/(111320*Math.cos(lat*Math.PI/180));return [lat-dy,lon-dx,lat+dy,lon+dx].map(function(x){return x.toFixed(5)}).join(',')}
+  function A(m){return '(around:'+m+','+P+')'}
+  var W='[water~"^(lake|pond|reservoir|lagoon|oxbow)$"]';
+  // Mindre frågor i tur och ordning – snabbare svar och ett fel stoppar inte resten
+  var parts=[
+    {keys:['grocery','school','preschool'],q:'(nwr'+A(6000)+'[shop~"^(supermarket|convenience|grocery)$"];nwr'+A(6000)+'[amenity~"^(school|kindergarten)$"];);out tags center;'},
+    {keys:['transit','center'],q:'(node'+A(3000)+'[highway=bus_stop];node'+A(3000)+'[railway~"^(station|halt|tram_stop)$"];node'+A(25000)+'[place~"^(city|town|village)$"];);out tags;'},
+    {keys:['lake'],q:'(way'+A(3000)+'[natural=water]'+W+';relation'+A(3000)+'[natural=water]'+W+';way'+A(3000)+'[natural=water][!water];relation'+A(3000)+'[natural=water][!water];);out tags geom('+bb(3200)+');'},
+    {keys:['forest'],q:'(way'+A(1500)+'[landuse=forest];way'+A(1500)+'[natural=wood];relation'+A(1500)+'[landuse=forest];relation'+A(1500)+'[natural=wood];);out tags geom('+bb(1700)+');'}
+  ];
+  var failed=0,done=0;
+  nearStatus(i,'Räknar ut avstånd… (0 av '+parts.length+')',true);
+  parts.reduce(function(chain,part){
+    return chain.then(function(){
+      if(state.houses[i].lat!==lat)return;
+      return overpass('[out:json][timeout:25];'+part.q).then(function(res){
+        if(state.houses[i].lat!==lat)return;
+        var best={},names={};
+        (res.elements||[]).forEach(function(e){
+          var k=classify(e.tags);if(!k||part.keys.indexOf(k)<0)return;
+          var d;
+          if(e.type==='node')d=haversine(lat,lon,e.lat,e.lon);
+          else if(e.center)d=haversine(lat,lon,e.center.lat,e.center.lon);
+          else if(e.geometry)d=geomDistance(lat,lon,e.geometry);
+          else if(e.members){d=Infinity;e.members.forEach(function(m){if(m.geometry&&m.geometry.length)d=Math.min(d,geomDistance(lat,lon,m.geometry))})}
+          if(d==null||!isFinite(d))return;
+          if(best[k]==null||d<best[k]){best[k]=d;names[k]=e.tags.name||''}
+        });
+        var hh=state.houses[i];
+        part.keys.forEach(function(k){hh.near[k]=best[k]!=null?Math.round(best[k]):null;hh.nearNames[k]=names[k]||(best[k]==null?'Inget inom '+fmtNum(NEAR_RADIUS[k],1)+' km':'')});
+        save();renderEditor(i);renderAll();
+      }).catch(function(){failed++}).then(function(){
+        done++;if(done<parts.length)nearStatus(i,'Räknar ut avstånd… ('+done+' av '+parts.length+')',true);
+      });
+    });
+  },Promise.resolve()).then(function(){
+    if(state.houses[i].lat!==lat)return;
+    nearStatus(i,failed?'Vissa avstånd kunde inte hämtas (kartservern är upptagen). Försök igen om en stund eller fyll i dem själv.':'Klart! Avstånden är fågelvägen. Ändra dem om något inte stämmer.');
+  });
+}
+
+function geocode(i){
+  var h=state.houses[i];if(!h.address){nearStatus(i,'Skriv in en adress först.');return}
+  nearStatus(i,'Letar upp adressen…',true);
+  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=se&q='+encodeURIComponent(h.address),{headers:{'Accept-Language':'sv'}})
+    .then(function(r){return r.json()}).then(function(js){
+      if(!js||!js.length){nearStatus(i,'Hittade inte adressen. Prova att lägga till ort, t.ex. ”Storgatan 1, Vara”.');return}
+      h.lat=+js[0].lat;h.lon=+js[0].lon;h.near={};h.nearNames={};save();renderAll();fetchNear(i);
+    }).catch(function(){nearStatus(i,'Kunde inte söka upp adressen just nu.')});
+}
+
+/* ---------- Karta ---------- */
+var map,markers=[null,null],line=null,lastFit='';
+function initMap(){
+  if(!window.L){$('#mapNote').textContent='Kartan kunde inte laddas (ingen internetanslutning?).';return}
+  map=L.map('map',{scrollWheelZoom:false}).setView([62.5,16],4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  map.on('focus',function(){map.scrollWheelZoom.enable()});
+  map.on('blur',function(){map.scrollWheelZoom.disable()});
+  // Kartan kan skapas innan layouten är klar – mät om och centrera när den syns
+  var refit=function(){map.invalidateSize();lastFit='';updateMap()};
+  setTimeout(refit,400);
+  if(window.IntersectionObserver)new IntersectionObserver(function(es){if(es[0].isIntersecting)refit()}).observe($('#map'));
+}
+function pinIcon(i){var c=i?'var(--b)':'var(--a)';return L.divIcon({className:'',html:'<div class="pin" style="background:'+c+'"><b>'+(i?'B':'A')+'</b></div>',iconSize:[30,30],iconAnchor:[15,30],popupAnchor:[0,-28]})}
+function updateMap(){
+  if(!map)return;
+  var pts=[];
+  [0,1].forEach(function(i){
+    var h=state.houses[i];
+    if(h.lat==null){if(markers[i]){map.removeLayer(markers[i]);markers[i]=null}return}
+    var ll=[h.lat,h.lon];pts.push(ll);
+    var html='<b>'+esc(h.name||h.address||('Bostad '+(i?'B':'A')))+'</b><br>'+esc(h.address||'')+(h.price?'<br>'+kr(h.price):'');
+    if(!markers[i]){
+      markers[i]=L.marker(ll,{icon:pinIcon(i),draggable:true}).addTo(map);
+      markers[i].on('dragend',function(e){var p=e.target.getLatLng();var hh=state.houses[i];hh.lat=+p.lat.toFixed(6);hh.lon=+p.lng.toFixed(6);hh.near={};hh.nearNames={};save();renderAll();fetchNear(i)});
+    }else markers[i].setLatLng(ll);
+    markers[i].bindPopup(html);
+  });
+  if(line){map.removeLayer(line);line=null}
+  if(pts.length===2)line=L.polyline(pts,{color:'#3aa597',weight:2,dashArray:'6 6'}).addTo(map);
+  var key=JSON.stringify(pts);
+  if(key!==lastFit){lastFit=key;
+    if(pts.length===2)map.fitBounds(pts,{padding:[50,50],maxZoom:14});else if(pts.length===1)map.setView(pts[0],13);}
+}
+
+/* ---------- Övrigt UI ---------- */
+function bindGlobal(){
+  ['rate','downPct'].forEach(function(id){var el=$('#'+id);el.value=fmtNum(state.loan[id],2);
+    el.addEventListener('input',function(){state.loan[id]=num(el.value)||0;save();renderAll();[0,1].forEach(renderEditorOutputs)});
+    el.addEventListener('blur',function(){el.value=fmtNum(state.loan[id],2)});});
+  var dd=$('#deduction');dd.checked=!!state.loan.deduction;
+  dd.addEventListener('change',function(){state.loan.deduction=dd.checked;save();renderAll();[0,1].forEach(renderEditorOutputs)});
+  $$('#tabs button').forEach(function(b){b.addEventListener('click',function(){setTab(+b.dataset.i)})});
+  setTab(state.tab||0);
+  var code=bookmarkletCode();$('#bmLink').href=code;
+  $('#bmLink').addEventListener('click',function(e){e.preventDefault();alert('Dra knappen till bokmärkesfältet i stället för att klicka på den. Klicka sedan på bokmärket när du är inne på en Booli-annons.')});
+  if(/^https?:/.test(location.href))$('#bmStep3').innerHTML='Husmyran öppnas i en ny flik och du väljer om bostaden ska bli A eller B.';
+  $('#btnCopyBm').addEventListener('click',function(){
+    var done=function(){alert('Bokmärkeskoden är kopierad.')};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).then(done,function(){prompt('Kopiera koden:',code)});else prompt('Kopiera koden:',code);
+  });
+  $('#btnReset').addEventListener('click',function(){if(confirm('Rensa båda bostäderna och börja om?')){state={loan:{rate:3,downPct:15,deduction:false},houses:[newHouse(),newHouse()],tab:0};save();bindLoanValues();buildEditors();renderAll();}});
+  $('#btnExport').addEventListener('click',function(){
+    var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download='husmyran-jamforelse.json';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);
+  });
+  $('#fileImport').addEventListener('change',function(e){
+    var f=e.target.files[0];if(!f)return;var rd=new FileReader();
+    rd.onload=function(){try{var s=JSON.parse(rd.result);if(!s.houses||s.houses.length!==2)throw 0;
+      s.houses=s.houses.map(function(h){return Object.assign(newHouse(),h)});state=s;save();bindLoanValues();buildEditors();renderAll();}
+      catch(err){alert('Filen kunde inte läsas.')}};
+    rd.readAsText(f);e.target.value='';
+  });
+}
+function bindLoanValues(){$('#rate').value=fmtNum(state.loan.rate,2);$('#downPct').value=fmtNum(state.loan.downPct,2);$('#deduction').checked=!!state.loan.deduction}
+function setTab(i){
+  state.tab=i;save();
+  $$('#tabs button').forEach(function(b){b.classList.toggle('on',+b.dataset.i===i)});
+  $$('.editor').forEach(function(e){e.classList.toggle('active',+e.dataset.i===i)});
+}
+
+function checkHashImport(){
+  var m=/#import=(.+)$/.exec(location.hash);if(!m)return;
+  var d;try{d=JSON.parse(decodeURIComponent(m[1]))}catch(e){return}
+  history.replaceState(null,'',location.pathname+location.search);
+  var md=$('#importModal');$('#imText').textContent=(d.address||'Bostaden')+(d.price?' · '+kr(d.price):'');
+  md.classList.add('show');
+  $$('#importModal [data-to]').forEach(function(b){b.onclick=function(){md.classList.remove('show');var to=+b.dataset.to;if(to>=0){setTab(to);applyImport(to,d);showMsg(to,'ok','Bostaden är hämtad från Booli.')}}});
+}
+
+/* ---------- Start ---------- */
+bindGlobal();
+buildEditors();
+initMap();
+renderAll();
+checkHashImport();
+window.addEventListener('hashchange',checkHashImport);
+window.addEventListener('resize',function(){if(map)map.invalidateSize()});
+})();
+</script>
+</body>
+</html>
