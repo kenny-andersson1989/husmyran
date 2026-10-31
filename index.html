@@ -130,6 +130,11 @@ details.sec>summary:hover{background:#fafcfd;border-radius:var(--radius)}
 .booli-info li{padding:2px 0}
 .calc-list{margin:12px 0 0;font-size:13.5px}
 .calc-list div{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.calc-list div{align-items:center}
+.toggle.mini{padding:0;gap:8px}
+.toggle.mini .sw{width:34px;height:20px}
+.toggle.mini .sw::after{width:14px;height:14px}
+.toggle.mini input:checked + .sw::after{left:17px}
 .calc-list div.tot{font-weight:800;border-bottom:0}
 .calc-list div.gap{border:0;padding-top:8px;font-weight:800;font-size:12.5px;color:var(--muted)}
 .sumline{grid-column:1/-1;display:flex;justify-content:space-between;gap:10px;background:#f3f7fa;border-radius:10px;padding:8px 12px;font-size:13.5px;font-weight:700}
@@ -684,7 +689,6 @@ var SECTIONS=[
       fNum('pantbrev','Befintliga pantbrev','kr','Redan uttagna på huset')+
     '</div>'+
     fNum('rate','Effektiv ränta','%','Inkl. avgifter, före ränteavdrag')+
-    '<div class="field"><span class="lbl">Ränteavdrag</span><label class="toggle" style="padding:6px 0"><input type="checkbox" data-f="deduction"><span class="sw"></span><span>Dra av 30 %</span></label></div>'+
     '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå i %</option><option value="kr">Belopp i kr/mån</option></select></div>'+
     '<div class="field" data-am="pct"><label>Amortering</label><div class="unit"><input data-f="amortPct" data-num inputmode="decimal"><span>% /år</span></div></div>'+
     '<div class="field" data-am="kr"><label>Amortering</label><div class="unit"><input data-f="amortKr" data-num inputmode="decimal"><span>kr/mån</span></div></div>'+
@@ -915,7 +919,11 @@ function renderOutputs(i){
     html=row('Kontantinsats'+(c.price?' ('+fmtNum(c.totalDownPct,1)+' %)':''),c.price?kr(c.down+c.extra):'Fyll i pris')+
       row('Lån'+(c.price?' ('+fmtNum(c.ltv*100,1)+' % belåning)':''),c.price?kr(c.loan):'–');
   }
-  html+=row('Effektiv ränta '+fmtNum(c.rate,2)+' %',m(c.interest))+row('Ränteavdrag',h.deduction?(c.deduct?'−'+m(c.deduct):'–'):'Ej avdraget')+
+  // ränteavdraget slås på direkt vid räntekostnaden
+  html+=row('Effektiv ränta '+fmtNum(c.rate,2)+' %',m(c.interest))+
+    '<div><label class="toggle mini"><input type="checkbox" data-f="deduction"'+(h.deduction?' checked':'')+'><span class="sw"></span><span>Ränteavdrag 30 %</span></label>'+
+    '<span>'+esc(h.deduction?(c.deduct?'−'+m(c.deduct):'–'):'Ej avdraget')+'</span></div>'+
+    (h.deduction&&c.deduct?row('Ränta efter avdrag',m(c.interest-c.deduct)):row('Ränta efter avdrag','–'))+
     row('Amortering '+fmtNum(c.amortPct,1)+' %',m(c.amort))+row('Avgift',m(c.rent))+row('Driftkostnad',m(c.drift))+
     row('Fastighetsavgift',m(c.fee))+row('Övriga kostnader',m(c.costs))+
     row('Månadskostnad',c.has?kr(c.total):'–','tot')+
