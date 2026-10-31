@@ -265,15 +265,9 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
     <div id="sections"></div>
   </section>
 
-  <section>
-    <details class="card sec" id="cmpSec" open style="margin-top:0">
-      <summary>📊 Jämförelse <small style="font-size:13px;font-weight:600;color:var(--muted)">– grönt markerar det bättre värdet</small></summary>
-      <div class="cmp-wrap" style="border-top:1px solid var(--line)"><table class="cmp" id="cmp"></table></div>
-    </details>
-  </section>
-
+  <!-- kartan direkt efter Närhet, som är sista sektionen ovan -->
   <section class="card">
-    <h2>Karta</h2>
+    <h2>🗺️ Karta</h2>
     <div class="map-tools">
       <div class="legend" id="mapLegend">
         <span class="lg"><span class="pin-mini" style="background:var(--a)">A</span><span class="pin-mini" style="background:var(--b)">B</span> Bostäderna</span>
@@ -286,6 +280,13 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
     </div>
     <div id="map"></div>
     <p class="map-note" id="mapNote">Ringens färg visar vilken bostad platsen hör till (blå = A, orange = B). Klicka på en ikon för namn och avstånd. Du kan dra bostadsmarkörerna om läget inte stämmer.</p>
+  </section>
+
+  <section>
+    <details class="card sec" id="cmpSec" open style="margin-top:0">
+      <summary>📊 Jämförelse <small style="font-size:13px;font-weight:600;color:var(--muted)">– grönt markerar det bättre värdet</small></summary>
+      <div class="cmp-wrap" style="border-top:1px solid var(--line)"><table class="cmp" id="cmp"></table></div>
+    </details>
   </section>
 
   <section class="card howto">
@@ -346,7 +347,7 @@ var NEAR = [
 // Driftkostnadens delar – anges per år eller per månad (väljs per rad)
 var DRIFT_ITEMS = [['el','El'],['heat','Uppvärmning'],['water','Vatten och avlopp'],['waste','Sophämtning'],['insurance','Hem-/villaförsäkring'],
   ['community','Samfällighet'],['chimney','Sotning'],['other','Övrigt']];
-var DRIFT_HINTS = {insurance:'Villahemförsäkring, eller hemförsäkring med bostadsrättstillägg',
+var DRIFT_HINTS = {el:'Elnät och elhandel – kostnad i kronor',insurance:'Villahemförsäkring, eller hemförsäkring med bostadsrättstillägg',
   community:'Gemensam förening för t.ex. vägar, belysning, grönytor eller VA',
   other:'Hit hamnar annonsens driftkostnad om den inte är fördelad'};
 // Övriga kostnader – anges per månad eller per år (väljs per rad)
@@ -729,9 +730,11 @@ var SECTIONS=[
     '<div class="field" data-am="kr"><label>Amortering</label><div class="unit"><input data-f="amortKr" data-num inputmode="decimal"><span>kr/mån</span></div></div>'+
     '<div class="full amort-info" data-o="amortInfo"></div>'+
     '<div class="subhead">Löpande boendekostnader – välj om beloppet är per månad eller per år</div>'+
-    fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra')+
-    DRIFT_ITEMS.map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
+    fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra','full')+
+    // elkostnad och elförbrukning bredvid varandra
+    fMoney('driftItems.el','El',DRIFT_HINTS.el)+
     '<div class="field"><label>Elförbrukning</label><div class="unit"><input data-f="kwh" data-num inputmode="decimal"><span>kWh/år</span></div><span class="hint" data-o="kwhHint"></span></div>'+
+    DRIFT_ITEMS.filter(function(x){return x[0]!=='el'}).map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
     fNum('household','Antal i hushållet','pers','Hur många som bor där')+
     '<div class="subhead">Övriga kostnader</div>'+
     COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
@@ -761,13 +764,14 @@ var SECTIONS=[
     '</div><div class="chips" data-o="extraFeat" style="margin-top:10px"></div>'+
     '<div class="add-feat"><input data-o="featInput" placeholder="Lägg till egen egenskap, t.ex. Gästhus"><button class="btn small" type="button" data-act="addFeat">Lägg till</button></div>'+
     '<ul class="booli-info" data-o="booliInfo"></ul>'}},
+  {id:'notes',title:'📝 Anteckningar',body:function(i){return ''+
+    '<div class="field"><textarea data-f="notes" rows="4" placeholder="Känsla från visningen, renoveringsbehov, frågor till mäklaren…"></textarea></div>'+
+    '<div style="margin-top:12px"><button class="btn small" type="button" data-act="clear">Töm bostad '+letter(i)+'</button></div>'}},
+  // sist, så att kartan kommer direkt efter
   {id:'near',title:'🌲 Närhet',body:function(i){return ''+
     '<div class="near-status" data-o="nearStatus"></div>'+
     '<div style="margin-bottom:10px"><button class="btn small" type="button" data-act="near">Räkna ut avstånd</button></div>'+
-    '<div class="g2">'+NEAR.map(function(n){return '<div class="field"><label>'+n[2]+' '+n[1]+'</label><div class="unit"><input data-near="'+n[0]+'" inputmode="numeric"><span>m</span></div><span class="hint" data-nearname="'+n[0]+'"></span></div>'}).join('')+'</div>'}},
-  {id:'notes',title:'📝 Anteckningar',body:function(i){return ''+
-    '<div class="field"><textarea data-f="notes" rows="4" placeholder="Känsla från visningen, renoveringsbehov, frågor till mäklaren…"></textarea></div>'+
-    '<div style="margin-top:12px"><button class="btn small" type="button" data-act="clear">Töm bostad '+letter(i)+'</button></div>'}}
+    '<div class="g2">'+NEAR.map(function(n){return '<div class="field"><label>'+n[2]+' '+n[1]+'</label><div class="unit"><input data-near="'+n[0]+'" inputmode="numeric"><span>m</span></div><span class="hint" data-nearname="'+n[0]+'"></span></div>'}).join('')+'</div>'}}
 ];
 
 function build(){
