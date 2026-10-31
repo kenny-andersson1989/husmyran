@@ -48,9 +48,9 @@ section{margin-bottom:22px}
 .hint{font-size:12px;color:var(--muted)}
 .unit{position:relative}
 .unit input{padding-right:52px}
-.unit>span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none}
+.unit>span:not(.per-tg){position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none}
 .unit.has-per input{padding-right:78px}
-.per-tg{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.per-tg{pointer-events:auto;position:absolute;right:5px;top:50%;transform:translateY(-50%);display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .per-tg button{border:0;background:#fff;font:inherit;font-size:11.5px;font-weight:700;color:var(--muted);padding:3px 7px;cursor:pointer}
 .per-tg button.on{background:var(--brand);color:#fff}
 .per-tg button:focus-visible{outline:2px solid var(--brand)}
@@ -599,7 +599,6 @@ var SECTIONS=[
     fText('area','Område')+
     '<div class="field"><label>Typ</label><select data-f="type">'+opt(TYPES)+'</select></div>'+
     '<div class="field"><label>Upplåtelseform</label><select data-f="tenure">'+opt(TENURES)+'</select></div>'+
-    '<div class="field"><label data-o="priceLabel">Pris</label><div class="unit"><input data-f="price" data-num inputmode="decimal"><span>kr</span></div></div>'+
     fNum('living','Boarea','m²')+fNum('extraArea','Biarea','m²')+
     fNum('rooms','Rum','rum')+fNum('bedrooms','Varav sovrum','st')+
     fNum('plot','Tomtarea','m²')+fNum('year','Byggår','')+
@@ -617,6 +616,7 @@ var SECTIONS=[
      '</div><p class="hint" style="margin:8px 0 0">Räntan räknas före ränteavdrag. Slår du på ränteavdraget dras 30 % av räntekostnaden av (21 % på räntor över 100 000 kr/år). '+
      'Amorteringen följer amorteringskravet automatiskt. Egen ränta och amortering kan anges per bostad nedan.</p>'},
    body:function(i){return '<div class="g2">'+
+    '<div class="field full"><label data-o="priceLabel">Pris</label><div class="unit"><input data-f="price" data-num inputmode="decimal"><span>kr</span></div></div>'+
     fNum('rent','Avgift / hyra','kr/mån')+
     fMoney('propertyFee','Fastighetsavgift')+
     '<div data-show="current" style="display:contents">'+fNum('existingLoan','Nuvarande lån','kr','Det du har kvar att betala')+
@@ -629,14 +629,13 @@ var SECTIONS=[
     '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå</option></select></div>'+
     fNum('amortPct','Amortering','% /år','','full')+
     '</div><div class="calc-list" data-o="calc"></div>'}},
-  {id:'drift',title:'⚡ Driftkostnad',body:function(i){return '<div class="g2">'+
+  {id:'drift',title:'⚡ Driftkostnad och övriga kostnader',body:function(i){return '<div class="g2">'+
+    '<div class="subhead" style="margin-top:0">Driftkostnad – välj om beloppet är per månad eller per år</div>'+
     fMoney('drift','Driftkostnad totalt','Används om du inte fyller i delarna nedan','full')+
-    '<div class="subhead">Fördelning – välj om beloppet är per månad eller per år</div>'+
     DRIFT_ITEMS.map(function(x){return fMoney('driftItems.'+x[0],x[1])}).join('')+
     '<div class="sumline" data-o="driftSum"></div>'+
     fNum('kwh','Elförbrukning','kWh/år')+fNum('household','Antal i hushållet','pers')+
-    '</div>'}},
-  {id:'costs',title:'🧾 Övriga kostnader',body:function(i){return '<div class="g2">'+
+    '<div class="subhead">Övriga kostnader</div>'+
     COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
     '<div class="sumline" data-o="costSum"></div></div>'}},
   {id:'building',title:'🧱 Byggnad',body:function(i){return '<div class="g2">'+BUILDING.map(function(x){return fText('building.'+x[0],x[1])}).join('')+'</div>'}},
@@ -783,8 +782,8 @@ function renderOutputs(i){
   hq(i,'[data-o="headSqm"]').textContent=c.sqm?kr(c.sqm)+'/m²':'';
   var img=hq(i,'[data-o="img"]'),ill=hq(i,'[data-o="ill"]');
   if(h.image){if(img.getAttribute('src')!==h.image)img.src=h.image;img.hidden=false;ill.hidden=true}
-  else{img.hidden=true;ill.hidden=false;var kind=h.type==='Lägenhet'?'apartment':'house';
-    if(ill.dataset.kind!==kind){ill.dataset.kind=kind;ill.innerHTML=illustration(kind)}}
+  else{img.hidden=true;ill.hidden=false;
+    if(ill.dataset.kind!==h.type){ill.dataset.kind=h.type;ill.innerHTML=illustration(h.type)}}
   var ol=hq(i,'[data-o="openLink"]');if(/^https?:\/\//.test(h.url||'')){ol.href=h.url;ol.hidden=false}else ol.hidden=true;
   var amortInp=hq(i,'[data-f="amortPct"]');amortInp.disabled=h.amortMode!=='manual';
   if(h.amortMode!=='manual'){amortInp.value='';amortInp.placeholder=fmtNum(c.autoAmort)+' (automatiskt)'}
@@ -825,25 +824,72 @@ function renderOutputs(i){
 }
 
 /* Generisk bild när ingen annonsbild finns – färgen följer bostadens (A/B) */
-function illustration(kind){
-  var sky='<rect width="400" height="170" fill="var(--cs)"/><circle cx="338" cy="38" r="16" fill="#fff" opacity=".9"/>'+
+function illustration(type){
+  var G=140; // marknivå
+  // himmel och mark ritas långt utanför bilden så att de fyller ut breda och smala kort
+  var sky='<rect x="-800" y="-400" width="2000" height="1000" fill="var(--cs)"/><circle cx="338" cy="38" r="16" fill="#fff" opacity=".9"/>'+
     '<g fill="#fff" opacity=".8"><ellipse cx="70" cy="34" rx="26" ry="9"/><ellipse cx="92" cy="28" rx="18" ry="9"/><ellipse cx="270" cy="52" rx="20" ry="7"/></g>'+
-    '<rect y="140" width="400" height="30" fill="#d9eadf"/>';
-  var tree=function(x,s){return '<g transform="translate('+x+' 0)"><rect x="-3" y="'+(140-22*s)+'" width="6" height="'+(22*s)+'" fill="#8a6f55"/><circle cy="'+(140-34*s)+'" r="'+(18*s)+'" fill="#7cc49a"/><circle cx="'+(-9*s)+'" cy="'+(140-26*s)+'" r="'+(12*s)+'" fill="#69b78a"/></g>'};
-  if(kind==='apartment'){
-    var win='';for(var r=0;r<5;r++)for(var c=0;c<4;c++)win+='<rect x="'+(162+c*22)+'" y="'+(42+r*18)+'" width="12" height="10" rx="2" fill="#fff"/>';
-    var win2='';for(var r2=0;r2<3;r2++)for(var c2=0;c2<2;c2++)win2+='<rect x="'+(262+c2*20)+'" y="'+(80+r2*18)+'" width="11" height="10" rx="2" fill="#fff" opacity=".9"/>';
-    return '<svg viewBox="0 0 400 170" preserveAspectRatio="xMidYMid slice">'+sky+
-      '<rect x="252" y="70" width="52" height="70" rx="3" fill="var(--c)" opacity=".55"/>'+win2+
-      '<rect x="150" y="30" width="96" height="110" rx="4" fill="var(--c)"/><rect x="146" y="26" width="104" height="8" rx="3" fill="var(--ink)" opacity=".75"/>'+win+
-      '<rect x="190" y="124" width="16" height="16" rx="2" fill="#fff"/>'+tree(118,1)+tree(330,.8)+'</svg>';
+    '<rect x="-800" y="'+G+'" width="2000" height="600" fill="#d9eadf"/>';
+  function tree(x,s){return '<g transform="translate('+x+' 0)"><rect x="-3" y="'+(G-22*s)+'" width="6" height="'+(22*s)+'" fill="#8a6f55"/><circle cy="'+(G-34*s)+'" r="'+(18*s)+'" fill="#7cc49a"/><circle cx="'+(-9*s)+'" cy="'+(G-26*s)+'" r="'+(12*s)+'" fill="#69b78a"/></g>'}
+  function pine(x,s){return '<g transform="translate('+x+' 0)"><rect x="-2.5" y="'+(G-12*s)+'" width="5" height="'+(12*s)+'" fill="#8a6f55"/><path d="M0 '+(G-62*s)+'l'+(16*s)+' '+(30*s)+'h'+(-6*s)+'l'+(12*s)+' '+(22*s)+'h'+(-44*s)+'l'+(12*s)+' '+(-22*s)+'h'+(-6*s)+'z" fill="#5fa982"/></g>'}
+  function win(x,y,w,h){return '<rect x="'+x+'" y="'+y+'" width="'+(w||16)+'" height="'+(h||14)+'" rx="2" fill="#fff"/>'}
+  function door(x,w,h){return '<rect x="'+x+'" y="'+(G-(h||26))+'" width="'+(w||14)+'" height="'+(h||26)+'" rx="2" fill="#fff"/>'}
+  // hus med sadeltak: x, bredd, väggens höjd, takets höjd
+  function gable(x,w,h,rh,fill,op){var y=G-h;return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+(fill||'var(--c)')+'"'+(op?' opacity="'+op+'"':'')+'/>'+
+    '<path d="M'+(x-5)+' '+(y+3)+'L'+(x+w/2)+' '+(y-rh)+'L'+(x+w+5)+' '+(y+3)+'z" fill="var(--ink)" opacity=".8"/>'}
+  var svg=function(body){return '<svg viewBox="0 0 400 170" preserveAspectRatio="xMidYMid meet" overflow="hidden">'+sky+body+'</svg>'};
+  var k,s='';
+  switch(type){
+    case 'Lägenhet':
+      var w1='';for(var r=0;r<5;r++)for(var c=0;c<4;c++)w1+=win(162+c*22,42+r*18,12,10);
+      var w2='';for(var r2=0;r2<3;r2++)for(var c2=0;c2<2;c2++)w2+=win(262+c2*20,80+r2*18,11,10);
+      return svg('<rect x="252" y="70" width="52" height="70" rx="3" fill="var(--c)" opacity=".55"/>'+w2+
+        '<rect x="150" y="30" width="96" height="110" rx="4" fill="var(--c)"/><rect x="146" y="26" width="104" height="8" rx="3" fill="var(--ink)" opacity=".75"/>'+w1+
+        '<rect x="190" y="124" width="16" height="16" rx="2" fill="#fff"/>'+tree(118,1)+tree(330,.8));
+    case 'Radhus':
+      // fyra sammanbyggda hus i en länga, var och en med egen gavel
+      for(k=0;k<4;k++){var x=92+k*54;s+=gable(x,54,50,26,'var(--c)',k%2?'.82':'')+win(x+8,G-40,14,12)+door(x+32,12,24)}
+      return svg(s+'<rect x="92" y="'+(G-50)+'" width="216" height="2" fill="var(--ink)" opacity=".25"/>'+tree(66,.9)+tree(338,.8));
+    case 'Parhus':
+      // ett hus delat på mitten med spegelvända entréer
+      return svg(gable(128,144,56,34)+'<rect x="199" y="'+(G-56)+'" width="2" height="56" fill="var(--ink)" opacity=".35"/>'+
+        win(140,G-44,20,16)+win(240,G-44,20,16)+door(172)+door(214)+tree(96,1)+tree(310,.9));
+    case 'Kedjehus':
+      // hus som länkas ihop av garage
+      [[70,0],[180,1],[290,2]].forEach(function(p,n){s+=gable(p[0],64,48,26)+win(p[0]+8,G-38,14,12)+door(p[0]+40,12,24);
+        if(n<2)s+='<rect x="'+(p[0]+64)+'" y="'+(G-30)+'" width="46" height="30" fill="var(--c)" opacity=".6"/><rect x="'+(p[0]+62)+'" y="'+(G-33)+'" width="50" height="5" fill="var(--ink)" opacity=".6"/>'+
+          '<rect x="'+(p[0]+71)+'" y="'+(G-22)+'" width="32" height="22" fill="#fff" opacity=".85"/><path d="M'+(p[0]+71)+' '+(G-15)+'h32M'+(p[0]+71)+' '+(G-8)+'h32" stroke="var(--c)" stroke-width="1" opacity=".5"/>'});
+      return svg(s);
+    case 'Fritidshus':
+      // liten stuga vid en sjö med brygga
+      return svg('<ellipse cx="330" cy="154" rx="90" ry="13" fill="#9fcde6"/>'+
+        '<rect x="262" y="146" width="40" height="4" fill="#8a6f55"/><rect x="266" y="146" width="3" height="10" fill="#8a6f55"/><rect x="296" y="146" width="3" height="10" fill="#8a6f55"/>'+
+        gable(130,84,42,30)+'<path d="M125 '+(G-39)+'L172 '+(G-72)+'L219 '+(G-39)+'" fill="none" stroke="#fff" stroke-width="3"/>'+
+        win(140,G-32,16,13)+win(190,G-32,16,13)+door(165,13,24)+'<rect x="128" y="'+(G-4)+'" width="88" height="4" fill="#fff" opacity=".8"/>'+
+        pine(92,1.1)+pine(238,.8)+pine(60,.8));
+    case 'Gård':
+      // bostadshus, ladugård med brutet tak och staket
+      return svg(gable(70,84,50,30)+win(80,G-40,16,14)+win(128,G-40,16,14)+door(106)+
+        '<rect x="200" y="'+(G-62)+'" width="120" height="62" fill="#c0504a"/>'+
+        '<path d="M194 '+(G-60)+'L214 '+(G-92)+'L306 '+(G-92)+'L326 '+(G-60)+'z" fill="var(--ink)" opacity=".8"/>'+
+        '<rect x="242" y="'+(G-40)+'" width="36" height="40" fill="#fff"/><path d="M242 '+(G-40)+'l36 40M278 '+(G-40)+'l-36 40" stroke="#c0504a" stroke-width="3"/>'+
+        '<rect x="252" y="'+(G-56)+'" width="16" height="10" fill="#fff"/>'+
+        '<g stroke="#fff" stroke-width="3"><path d="M10 '+(G-14)+'h50M10 '+(G-6)+'h50M340 '+(G-14)+'h55M340 '+(G-6)+'h55"/></g>'+
+        '<g fill="#fff"><rect x="12" y="'+(G-20)+'" width="4" height="20"/><rect x="34" y="'+(G-20)+'" width="4" height="20"/><rect x="56" y="'+(G-20)+'" width="4" height="20"/>'+
+        '<rect x="344" y="'+(G-20)+'" width="4" height="20"/><rect x="368" y="'+(G-20)+'" width="4" height="20"/><rect x="391" y="'+(G-20)+'" width="4" height="20"/></g>'+tree(350,.6));
+    case 'Tomt/Mark':
+      // obebyggd tomt med gränspinnar och skylt
+      return svg('<path d="M90 '+(G+22)+'L140 '+(G-8)+'L300 '+(G-8)+'L330 '+(G+22)+'z" fill="#c9e3c1" stroke="var(--c)" stroke-width="2.5" stroke-dasharray="7 5"/>'+
+        [[90,G+22],[140,G-8],[300,G-8],[330,G+22]].map(function(p){return '<rect x="'+(p[0]-2)+'" y="'+(p[1]-16)+'" width="4" height="16" fill="#8a6f55"/><rect x="'+(p[0]-3)+'" y="'+(p[1]-18)+'" width="6" height="5" fill="var(--c)"/>'}).join('')+
+        '<rect x="196" y="'+(G-50)+'" width="4" height="46" fill="#8a6f55"/><rect x="170" y="'+(G-64)+'" width="56" height="24" rx="4" fill="#fff" stroke="var(--c)" stroke-width="2"/>'+
+        '<text x="198" y="'+(G-47)+'" text-anchor="middle" font-family="Nunito,sans-serif" font-weight="800" font-size="13" fill="var(--c)">TOMT</text>'+
+        tree(60,1)+pine(360,.9)+tree(250,.5));
+    default: // Villa
+      return svg('<rect x="150" y="82" width="110" height="58" fill="var(--c)"/>'+
+        '<path d="M140 86 205 40l65 46z" fill="var(--ink)" opacity=".8"/><rect x="232" y="48" width="10" height="22" fill="var(--ink)" opacity=".8"/>'+
+        win(164,96,22,18)+win(224,96,22,18)+door(196,18,32)+'<circle cx="210" cy="125" r="1.6" fill="var(--c)"/>'+
+        tree(112,1)+tree(300,.85));
   }
-  return '<svg viewBox="0 0 400 170" preserveAspectRatio="xMidYMid slice">'+sky+
-    '<rect x="150" y="82" width="110" height="58" fill="var(--c)"/>'+
-    '<path d="M140 86 205 40l65 46z" fill="var(--ink)" opacity=".8"/><rect x="232" y="48" width="10" height="22" fill="var(--ink)" opacity=".8"/>'+
-    '<rect x="164" y="96" width="22" height="18" rx="2" fill="#fff"/><rect x="224" y="96" width="22" height="18" rx="2" fill="#fff"/>'+
-    '<rect x="196" y="108" width="18" height="32" rx="2" fill="#fff"/><circle cx="210" cy="125" r="1.6" fill="var(--c)"/>'+
-    tree(112,1)+tree(300,.85)+'</svg>';
 }
 
 /* ---------- Adressförslag (Photon / OpenStreetMap) ---------- */
