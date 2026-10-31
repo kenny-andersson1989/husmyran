@@ -131,6 +131,21 @@ details.sec>summary:hover{background:#fafcfd;border-radius:var(--radius)}
 .calc-list{margin:12px 0 0;font-size:13.5px}
 .calc-list div{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed var(--line)}
 .calc-list div{align-items:center}
+/* belåningsmätare under amorteringen */
+.amort-info{font-size:12.5px;color:var(--muted)}
+.ltv{position:relative;margin:4px 0 2px}
+.ltv-bar{display:flex;height:10px;border-radius:5px;overflow:hidden}
+.ltv-bar i{display:block;height:100%}
+.ltv-bar .z0{width:50%;background:#cdeedb}.ltv-bar .z1{width:20%;background:#fbe6ae}.ltv-bar .z2{width:30%;background:#f7c4b0}
+.ltv-mark{position:absolute;top:-4px;width:4px;height:18px;margin-left:-2px;background:var(--c,var(--ink));border-radius:2px;box-shadow:0 0 0 2px #fff}
+.ltv-lab{display:flex;font-size:11px;font-weight:700;margin-top:2px}
+.ltv-lab span{text-align:center}
+.ltv-txt{min-height:36px;margin-top:2px}
+/* ränta med ränteavdrag i samma rad */
+.calc-list div.rate-row{align-items:flex-start}
+.rate-row .l{display:flex;flex-direction:column;gap:4px}
+.rate-row .r{text-align:right}
+.rate-row small{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
 .toggle.mini{padding:0;gap:8px}
 .toggle.mini .sw{width:34px;height:20px}
 .toggle.mini .sw::after{width:14px;height:14px}
@@ -713,14 +728,13 @@ var SECTIONS=[
     '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå i %</option><option value="kr">Belopp i kr/mån</option></select></div>'+
     '<div class="field" data-am="pct"><label>Amortering</label><div class="unit"><input data-f="amortPct" data-num inputmode="decimal"><span>% /år</span></div></div>'+
     '<div class="field" data-am="kr"><label>Amortering</label><div class="unit"><input data-f="amortKr" data-num inputmode="decimal"><span>kr/mån</span></div></div>'+
+    '<div class="full amort-info" data-o="amortInfo"></div>'+
     '<div class="subhead">Driftkostnad – välj om beloppet är per månad eller per år</div>'+
     DRIFT_ITEMS.map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
-    '<div class="sumline" data-o="driftSum"></div>'+
     '<div class="field"><label>Elförbrukning</label><div class="unit"><input data-f="kwh" data-num inputmode="decimal"><span>kWh/år</span></div><span class="hint" data-o="kwhHint"></span></div>'+
     fNum('household','Antal i hushållet','pers','Hur många som bor där')+
     '<div class="subhead">Övriga kostnader</div>'+
     COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
-    '<div class="sumline" data-o="costSum"></div>'+
     '<div class="subhead">Summering</div></div><div class="calc-list" data-o="calc"></div>'}},
   // försäljning av nuvarande bostad – och om pengarna räcker till nästa köp
   {id:'sale',title:'🏷️ Försäljning av nuvarande bostad',body:function(i){return ''+
@@ -925,11 +939,18 @@ function renderOutputs(i){
     h.tenure==='Bostadsrätt'?'Betalas av föreningen via avgiften':
     h.tenure!=='Äganderätt'?'Ingen för den här upplåtelseformen':'Uppskattad utifrån priset';
   hq(i,'[data-o="feeHint"]').parentNode.title=c.feeFree?'Hus som är byggda 2012 eller senare betalar ingen kommunal fastighetsavgift de första 15 åren.':'';
-  var dm=driftItemsMonthly(h);
-  hq(i,'[data-o="driftSum"]').innerHTML='<span>Summa '+(dm!=null?kr(dm)+'/mån':'–')+'</span><span>'+(dm!=null?kr(dm*12)+'/år':'')+'</span>';
-  var cm=sumMonthly(h,'costs.',COSTS);
-  hq(i,'[data-o="costSum"]').innerHTML='<span>Summa '+(cm!=null?kr(cm)+'/mån':'–')+'</span><span>'+(cm!=null?kr(cm*12)+'/år':'')+'</span>';
   function row(a,b,cls){return '<div'+(cls?' class="'+cls+'"':'')+'><span>'+esc(a)+'</span><span>'+esc(b)+'</span></div>'}
+  // amorteringskravet: mätare för belåningsgraden med zonerna 0 / 1 / 2 %
+  var ai=hq(i,'[data-o="amortInfo"]');
+  if(!c.price||!c.loan)ai.innerHTML='<div class="ltv-txt">Amorteringskrav: belåning över 70 % → 2 %, 50–70 % → 1 %, under 50 % → 0 %</div>';
+  else{
+    var pct=c.ltv*100,req=c.autoAmort;
+    ai.innerHTML='<div class="ltv"><div class="ltv-bar"><i class="z0"></i><i class="z1"></i><i class="z2"></i></div>'+
+      '<b class="ltv-mark" style="left:'+Math.min(100,pct).toFixed(1)+'%"></b>'+
+      '<div class="ltv-lab"><span style="width:50%">0 %</span><span style="width:20%">1 %</span><span style="width:30%">2 % amortering</span></div></div>'+
+      '<div class="ltv-txt">Belåningsgrad <b>'+fmtNum(pct,1)+' %</b> → amorteringskrav <b>'+req+' %</b> per år'+
+      (req===2?' · '+kr(c.loan-c.price*0.7)+' mindre lån ger 1 %':req===1?' · '+kr(c.loan-c.price*0.5)+' mindre lån ger 0 %':' – inget krav')+'</div>';
+  }
   // samma rader för båda bostäderna så att kolumnerna hamnar i jämnhöjd
   var m=function(v){return v?kr(v)+'/mån':'–'};
   var html='';
@@ -941,12 +962,14 @@ function renderOutputs(i){
       row('Lån'+(c.price?' ('+fmtNum(c.ltv*100,1)+' % belåning)':''),c.price?kr(c.loan):'–');
   }
   // ränteavdraget slås på direkt vid räntekostnaden
-  html+=row('Effektiv ränta '+fmtNum(c.rate,2)+' %',m(c.interest))+
-    '<div><label class="toggle mini"><input type="checkbox" data-f="deduction"'+(h.deduction?' checked':'')+'><span class="sw"></span><span>Ränteavdrag 30 %</span></label>'+
-    '<span>'+esc(h.deduction?(c.deduct?'−'+m(c.deduct):'–'):'Ej avdraget')+'</span></div>'+
-    (h.deduction&&c.deduct?row('Ränta efter avdrag',m(c.interest-c.deduct)):row('Ränta efter avdrag','–'))+
-    row('Amortering '+fmtNum(c.amortPct,1)+' %',m(c.amort))+row('Avgift',m(c.rent))+row('Driftkostnad',m(c.drift))+
-    row('Fastighetsavgift',m(c.fee))+row('Övriga kostnader',m(c.costs))+
+  // räntan och ränteavdraget i en rad: växeln under texten, beloppet efter avdrag när det är på
+  var withDed=h.deduction&&c.deduct;
+  html+='<div class="rate-row"><span class="l"><span>Effektiv ränta '+fmtNum(c.rate,2)+' %</span>'+
+      '<label class="toggle mini"><input type="checkbox" data-f="deduction"'+(h.deduction?' checked':'')+'><span class="sw"></span><span>Ränteavdrag 30 %</span></label></span>'+
+    '<span class="r">'+(withDed?kr(c.interest-c.deduct)+'/mån<small>efter avdrag · '+kr(c.interest)+' före</small>':m(c.interest)+'<small>'+(c.interest?'före avdrag':'')+'</small>')+'</span></div>'+
+    row('Amortering '+fmtNum(c.amortPct,1)+' %',m(c.amort))+row('Avgift',m(c.rent))+
+    row('Driftkostnad'+(c.drift?' ('+kr(c.drift*12)+'/år)':''),m(c.drift))+
+    row('Fastighetsavgift',m(c.fee))+row('Övriga kostnader'+(c.costs?' ('+kr(c.costs*12)+'/år)':''),m(c.costs))+
     row('Månadskostnad',c.has?kr(c.total):'–','tot')+
     row('Engångskostnader vid köp','','gap')+
     (c.br?row('Överlåtelseavgift (2,5 % av prisbasbeloppet, ca)',h.current?'–':(c.lagfart?kr(c.lagfart):'–'))+
