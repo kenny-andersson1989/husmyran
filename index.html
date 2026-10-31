@@ -48,7 +48,12 @@ section{margin-bottom:22px}
 .field .hint{font-size:12px;color:var(--muted)}
 .unit{position:relative}
 .unit input{padding-right:52px}
-.unit span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none}
+.unit>span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none}
+.unit.has-per input{padding-right:78px}
+.per-tg{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.per-tg button{border:0;background:#fff;font:inherit;font-size:11.5px;font-weight:700;color:var(--muted);padding:3px 7px;cursor:pointer}
+.per-tg button.on{background:var(--brand);color:#fff}
+.per-tg button:focus-visible{outline:2px solid var(--brand)}
 .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:8px 0}
 .toggle input{position:absolute;opacity:0;pointer-events:none}
 .toggle .sw{width:42px;height:24px;border-radius:12px;background:#d5dee6;position:relative;transition:.2s;flex:none}
@@ -64,48 +69,42 @@ section{margin-bottom:22px}
 .ac-list button:hover,.ac-list button.on{background:var(--brand-soft)}
 .ac-list .ac-empty{padding:9px 12px;font-size:13px;color:var(--muted)}
 
-/* Sammanfattning */
-.summary{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.sum{border-radius:var(--radius);padding:16px 18px;border:1px solid var(--line);background:#fff;position:relative;overflow:hidden}
-.sum::before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:var(--c)}
-.sum.a{--c:var(--a)} .sum.b{--c:var(--b)}
-.sum .who{font-weight:800;color:var(--c);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
-.sum .name{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sum .big{font-size:30px;font-weight:800;line-height:1.1;margin-top:6px}
-.sum .big small{font-size:14px;color:var(--muted);font-weight:700}
-.sum .sub{color:var(--muted);font-size:13px}
-.verdict{grid-column:1/-1;background:var(--brand-soft);color:var(--brand-ink);border-radius:12px;padding:10px 14px;font-weight:700;text-align:center}
-
-/* Redigerare */
-.tabs{display:none;gap:8px;margin-bottom:12px}
+/* Huvudkort per bostad */
+.tabs{display:none;gap:8px;margin-bottom:12px;position:sticky;top:0;z-index:20;background:var(--bg);padding:8px 0}
 .tabs button{flex:1;padding:10px;border-radius:12px;border:2px solid var(--line);background:#fff;font:inherit;font-weight:800;cursor:pointer;color:var(--muted)}
 .tabs button.on[data-i="0"]{border-color:var(--a);color:var(--a);background:var(--a-soft)}
 .tabs button.on[data-i="1"]{border-color:var(--b);color:var(--b);background:var(--b-soft)}
-.editors{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
-.editor{border-top:6px solid var(--c);padding:0}
-.editor.a{--c:var(--a);--cs:var(--a-soft)} .editor.b{--c:var(--b);--cs:var(--b-soft)}
+.heads{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.head{padding:0;overflow:hidden;border-top:6px solid var(--c)}
+.a{--c:var(--a);--cs:var(--a-soft)} .b{--c:var(--b);--cs:var(--b-soft)}
 .ed-head{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--cs)}
-.ed-head .badge{width:34px;height:34px;border-radius:50%;background:var(--c);color:#fff;font-weight:800;display:grid;place-items:center;flex:none}
+.badge{width:34px;height:34px;border-radius:50%;background:var(--c);color:#fff;font-weight:800;display:grid;place-items:center;flex:none}
 .ed-head .t{min-width:0;flex:1}
 .ed-head .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ed-head .t span{font-size:13px;color:var(--muted)}
-.ed-head .cost{text-align:right;font-weight:800;font-size:20px;white-space:nowrap}
+.ed-head .cost{text-align:right;font-weight:800;font-size:22px;white-space:nowrap}
 .ed-head .cost small{display:block;font-size:11.5px;color:var(--muted);font-weight:700}
 .ed-media{height:170px;background:var(--cs);overflow:hidden}
 .ed-img{display:block;width:100%;height:100%;object-fit:cover;background:var(--line)}
 .ed-ill,.ed-ill svg{display:block;width:100%;height:100%}
-.ed-body{padding:4px 18px 18px}
-.current-row{border-bottom:1px solid var(--line);padding:6px 0}
-details.grp{border-bottom:1px solid var(--line)}
-details.grp:last-child{border-bottom:0}
-details.grp>summary{list-style:none;cursor:pointer;padding:14px 0;font-weight:800;display:flex;align-items:center;gap:8px}
-details.grp>summary::-webkit-details-marker{display:none}
-details.grp>summary::after{content:"";margin-left:auto;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s}
-details.grp[open]>summary::after{transform:rotate(-135deg)}
-.grp-body{padding-bottom:16px}
+.head-foot{padding:10px 18px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.verdict{margin-top:14px;background:var(--brand-soft);color:var(--brand-ink);border-radius:12px;padding:10px 14px;font-weight:700;text-align:center}
+
+/* Gemensamma sektioner */
+details.sec{padding:0;margin-top:14px;overflow:visible}
+details.sec>summary{list-style:none;cursor:pointer;padding:15px 18px;font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:"";margin-left:auto;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s}
+details.sec[open]>summary::after{transform:rotate(-135deg)}
+details.sec>summary:hover{background:#fafcfd;border-radius:var(--radius)}
+.pair{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+.col{padding:14px 18px 18px;min-width:0}
+.col.b{border-left:1px solid var(--line)}
+.col-tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--c);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}
+.col-tag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.span2,.full{grid-column:1/-1}
+.full{grid-column:1/-1}
 .subhead{grid-column:1/-1;font-size:13px;font-weight:800;color:var(--ink);margin:8px 0 -2px}
 .import-box textarea{min-height:76px;resize:vertical;font-size:13px}
 .msg{font-size:13px;border-radius:10px;padding:8px 10px;margin-top:8px;display:none}
@@ -126,11 +125,12 @@ details.grp[open]>summary::after{transform:rotate(-135deg)}
 .add-feat input{flex:1;font:inherit;border:1px solid var(--line);border-radius:10px;padding:6px 10px;min-width:0}
 .booli-info{margin:10px 0 0;padding:0;list-style:none;font-size:13px;color:var(--muted)}
 .booli-info li{padding:2px 0}
-.calc-list{margin:10px 0 0;font-size:13.5px}
+.calc-list{margin:12px 0 0;font-size:13.5px}
 .calc-list div{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed var(--line)}
-.calc-list div:last-child{border:0;font-weight:800}
+.calc-list div.tot{font-weight:800;border-bottom:0}
+.calc-list div.gap{border:0;padding-top:8px;font-weight:800;font-size:12.5px;color:var(--muted)}
 .sumline{grid-column:1/-1;display:flex;justify-content:space-between;gap:10px;background:#f3f7fa;border-radius:10px;padding:8px 12px;font-size:13.5px;font-weight:700}
-.near-status{font-size:13px;color:var(--muted);margin:6px 0 10px}
+.near-status{font-size:13px;color:var(--muted);margin:0 0 10px;min-height:20px}
 
 /* Jämförelse */
 .cmp-wrap{padding:0;overflow:hidden}
@@ -166,13 +166,20 @@ table.cmp td.lab small{display:block}
 
 footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 30px}
 
-@media (max-width:899px){
+@media (max-width:1000px){
+  .col .g2,.col .g3{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
   .tabs{display:flex}
-  .editors{grid-template-columns:1fr}
-  .editor:not(.active){display:none}
-  .summary{gap:10px}
-  .sum{padding:12px 12px 12px 16px}
-  .sum .big{font-size:22px}
+  .heads{gap:10px}
+  .ed-head{padding:10px 12px;gap:8px;flex-wrap:wrap}
+  .ed-head .badge{width:28px;height:28px}
+  .ed-head .cost{font-size:18px;width:100%;text-align:left}
+  .ed-media{height:100px}
+  .head-foot{padding:8px 12px;font-size:12px}
+  .pair{grid-template-columns:1fr}
+  .col.b{border-left:0}
+  .pair>.col:not(.active){display:none}
   table.cmp{font-size:13.5px}
   table.cmp th,table.cmp td{padding:8px}
   table.cmp col.c1{width:34%}
@@ -182,9 +189,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
   header.top .wrap{flex-wrap:wrap}
   .top-actions{margin-left:0;width:100%;justify-content:flex-start}
   .brand h1{font-size:22px}
-  .g3{grid-template-columns:1fr 1fr}
-  .sum .name{font-size:14px}
-  .sum .big{font-size:19px}
+  .col .g2{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -238,16 +243,14 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
     <p class="field" style="margin:10px 0 0"><span class="hint">Räntan räknas före ränteavdrag. Slår du på ränteavdraget dras 30 % av räntekostnaden av (21 % på räntor över 100 000 kr/år). Amorteringen följer amorteringskravet automatiskt, men du kan ändra den under varje bostad.</span></p>
   </section>
 
-  <section>
-    <div class="summary" id="summary"></div>
-  </section>
-
-  <section>
-    <div class="tabs" id="tabs">
-      <button type="button" data-i="0" class="on">Bostad A</button>
-      <button type="button" data-i="1">Bostad B</button>
+  <section id="app">
+    <div class="heads" id="heads"></div>
+    <div class="verdict" id="verdict" hidden></div>
+    <div class="tabs" id="tabs" style="margin-top:14px">
+      <button type="button" data-i="0" class="on">A</button>
+      <button type="button" data-i="1">B</button>
     </div>
-    <div class="editors" id="editors"></div>
+    <div id="sections"></div>
   </section>
 
   <section>
@@ -315,10 +318,10 @@ var NEAR = [
   ['lake','Sjö','💧'],['forest','Skog','🌲'],['grocery','Matbutik','🛒'],['school','Skola','🏫'],
   ['preschool','Förskola','🧸'],['transit','Kollektivtrafik','🚌'],['center','Ort/centrum','🏘️']
 ];
-// Driftkostnadens delar (kr/år, som i annonserna)
+// Driftkostnadens delar – anges per år eller per månad (väljs per rad)
 var DRIFT_ITEMS = [['el','El'],['heat','Uppvärmning'],['water','Vatten och avlopp'],['waste','Sophämtning'],['insurance','Försäkring'],
   ['community','Samfällighet'],['chimney','Sotning'],['other','Övrigt']];
-// Övriga månadskostnader (kr/mån)
+// Övriga kostnader – anges per månad eller per år (väljs per rad)
 var COSTS = [['broadband','Bredband/TV'],['parking','Parkering/garage'],['homeInsurance','Hemförsäkring'],['alarm','Larm'],['other','Övrigt']];
 var BUILDING = [['foundation','Grund'],['frame','Stomme'],['facade','Fasad'],['roof','Tak'],['windows','Fönster'],['ventilation','Ventilation'],
   ['water','Vatten'],['sewage','Avlopp'],['internet','Tv/Internet'],['fuse','Huvudsäkring'],['parkingInfo','Parkering'],['outbuildings','Övriga byggnader']];
@@ -326,11 +329,11 @@ var BUILDING = [['foundation','Grund'],['frame','Stomme'],['facade','Fasad'],['r
 function newHouse(current){
   return {current:!!current,url:'',name:'',address:'',area:'',type:'Villa',tenure:'Äganderätt',price:null,
     living:null,extraArea:null,plot:null,rooms:null,bedrooms:null,year:null,floor:'',heating:'',heatingNote:'',energyClass:'',
-    rent:null,drift:null,driftItems:{},kwh:null,household:null,costs:{},
-    propertyFee:null,extraDown:null,existingLoan:null,rateOverride:null,amortMode:'auto',amortPct:null,pantbrev:null,
+    rent:null,drift:null,driftItems:{},kwh:null,household:null,costs:{},per:{},
+    propertyFee:null,extraDown:null,existingLoan:null,rateFixedUntil:'',rateOverride:null,amortMode:'auto',amortPct:null,pantbrev:null,
     building:{},features:{},extraFeatures:[],lat:null,lon:null,near:{},nearNames:{},notes:'',image:'',booliInfo:[]};
 }
-function freshState(){return {loan:{rate:3,downPct:15,deduction:false},houses:[newHouse(true),newHouse(false)],tab:0}}
+function freshState(){return {loan:{rate:3,downPct:15,deduction:false},houses:[newHouse(true),newHouse(false)],tab:0,open:{}}}
 var state = load() || freshState();
 
 function load(){
@@ -341,6 +344,7 @@ function load(){
       if(h.other!=null&&n.costs.other==null)n.costs.other=h.other;
       delete n.other;delete n.estimate;
       return n;});
+    s.open=s.open||{};
     return s;}}catch(e){}
   return null;
 }
@@ -350,6 +354,9 @@ function save(){clearTimeout(saveTimer);saveTimer=setTimeout(function(){try{loca
 /* ---------- Hjälpfunktioner ---------- */
 function $(s,r){return (r||document).querySelector(s)}
 function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
+// element som tillhör bostad i (huvudkortet och kolumnerna i alla sektioner)
+function hq(i,sel){return $('[data-h="'+i+'"] '+sel)}
+function hqa(i,sel){return $$('[data-h="'+i+'"] '+sel)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function num(v){if(v==null)return null;var s=String(v).replace(/[\s  ]|kr/g,'').replace(',','.');if(s==='')return null;var n=parseFloat(s);return isFinite(n)?n:null}
 function fmtNum(n,dec){if(n==null||!isFinite(n))return '';return Number(n).toLocaleString('sv-SE',{maximumFractionDigits:dec==null?0:dec})}
@@ -357,14 +364,19 @@ function kr(n){return n==null||!isFinite(n)?'–':Math.round(n).toLocaleString('
 function dist(m){if(m==null)return '–';if(m<1000)return Math.round(m/10)*10+' m';return (m/1000).toLocaleString('sv-SE',{maximumFractionDigits:1})+' km'}
 function getPath(o,p){return p.split('.').reduce(function(a,k){return a==null?a:a[k]},o)}
 function setPath(o,p,v){var ks=p.split('.'),last=ks.pop();ks.forEach(function(k){if(o[k]==null||typeof o[k]!=='object')o[k]={};o=o[k]});o[last]=v}
-function sumObj(o,keys){var s=0,any=false;keys.forEach(function(k){if(o&&o[k]!=null){s+=o[k];any=true}});return any?s:null}
 function letter(i){return i?'B':'A'}
 function houseLabel(i){return state.houses[i].current?'Nuvarande bostad':'Bostad '+letter(i)}
 function houseName(i){var h=state.houses[i];return h.name||h.address||houseLabel(i)}
 
+/* Period per kostnadsfält: 'mån' eller 'år' */
+function defaultPer(key){return key.indexOf('driftItems.')===0||key==='propertyFee'?'år':'mån'}
+function perOf(h,key){return (h.per&&h.per[key])||defaultPer(key)}
+function monthly(h,key){var v=getPath(h,key);return v==null?null:(perOf(h,key)==='år'?v/12:v)}
+function sumMonthly(h,prefix,list){var s=0,any=false;list.forEach(function(x){var v=monthly(h,prefix+x[0]);if(v!=null){s+=v;any=true}});return any?s:null}
+
 /* ---------- Kalkyl ---------- */
-function driftYearItems(h){return sumObj(h.driftItems,DRIFT_ITEMS.map(function(x){return x[0]}))}
-function driftMonthly(h){var y=driftYearItems(h);return y!=null?y/12:h.drift}
+function driftItemsMonthly(h){return sumMonthly(h,'driftItems.',DRIFT_ITEMS)}
+function driftMonthly(h){var m=driftItemsMonthly(h);return m!=null?m:monthly(h,'drift')}
 function calc(h){
   var L=state.loan, price=h.price||0;
   var rate=h.rateOverride!=null?h.rateOverride:(L.rate||0);
@@ -383,16 +395,18 @@ function calc(h){
   var interest=interestYear/12, deduct=L.deduction?deductYear/12:0, amort=loan*amortPct/100/12;
   var owned=h.tenure==='Äganderätt'&&h.type!=='Tomt/Mark';
   var autoFee=owned?Math.min(price*0.75*0.0075,PROPERTY_FEE_CAP):0;
-  var feeYear=h.propertyFee!=null?h.propertyFee:autoFee, fee=feeYear/12;
+  var fee=h.propertyFee!=null?monthly(h,'propertyFee'):autoFee/12;
   var rent=h.rent||0, drift=driftMonthly(h)||0;
-  var costs=sumObj(h.costs,COSTS.map(function(x){return x[0]}))||0;
+  var costs=sumMonthly(h,'costs.',COSTS)||0;
   var total=interest-deduct+amort+rent+drift+fee+costs;
+  // lagfart 1,5 % + 825 kr, pantbrev 2 % av nya pantbrev + 375 kr (bara vid köp av äganderätt)
   var buyOwned=!h.current&&h.tenure==='Äganderätt';
   var lagfart=buyOwned&&price?price*0.015+825:0;
-  var pantbrev=buyOwned&&loan>(h.pantbrev||0)?(loan-(h.pantbrev||0))*0.02+375:0;
+  var newPant=buyOwned?Math.max(0,loan-(h.pantbrev||0)):0;
+  var pantbrev=newPant?newPant*0.02+375:0;
   return {price:price,rate:rate,down:down,extra:extra,loan:loan,ltv:ltv,autoAmort:autoAmort,amortPct:amortPct,
     interest:interest,deduct:deduct,amort:amort,fee:fee,autoFee:autoFee,rent:rent,drift:drift,costs:costs,
-    total:total,totalExAmort:total-amort,sqm:h.living&&price?price/h.living:null,lagfart:lagfart,pantbrev:pantbrev,
+    total:total,totalExAmort:total-amort,sqm:h.living&&price?price/h.living:null,lagfart:lagfart,pantbrev:pantbrev,newPant:newPant,
     cash:h.current?null:down+extra+lagfart+pantbrev,has:!!(h.price||h.rent||drift||h.existingLoan)};
 }
 
@@ -474,13 +488,13 @@ function parsePlainText(t){
   d.bedrooms=n(/(\d+)\s*sovrum/i);
   d.rent=n(rx('(?:Månadsavgift|Avgift)(?:en)?\\s*(?:är)?\\s*:?\\s*'+NUM+'\\s*kr'));
   var dr=rx('Drift(?:s)?kostnad(?:en|er)?\\s*(?:är)?\\s*:?\\s*'+NUM+'\\s*kr\\s*/\\s*(år|mån)').exec(t);
-  if(dr)d.drift=/år/i.test(dr[2])?num(dr[1])/12:num(dr[1]);
+  if(dr){d.drift=num(dr[1]);d.driftPer=/år/i.test(dr[2])?'år':'mån';}
   d.year=n(/(?:Byggnadsår|Byggår|Byggt år|Byggdes)\s*:?\s*(?:år\s*)?(\d{4})/i);
   var fl=/våning\s*(\d+)/i.exec(t);if(fl)d.floor=+fl[1];
   var ec=/Energiklass\s*:?\s*([A-G])\b/i.exec(t);if(ec)d.energyClass=ec[1].toUpperCase();
   d.kwh=n(rx('elförbrukning\\s*:?\\s*'+NUM+'\\s*kWh'));
   d.household=n(/Antal i hushållet\s*:?\s*(\d+)/i);
-  // driftkostnadens delar, t.ex. "El: 6 579 kr"
+  // driftkostnadens delar, t.ex. "El: 6 579 kr" (annonser anger dem per år)
   var di={el:'El|Elförbrukning',heat:'Uppvärmning|Värme',water:'Vatten och avlopp|Vatten & avlopp|VA',waste:'Sophämtning|Renhållning|Avfall',
     insurance:'Försäkring|Hemförsäkring|Villaförsäkring',community:'Samfällighet(?:savgift)?|Vägavgift',chimney:'Sotning',other:'Övrigt|Övriga kostnader'};
   Object.keys(di).forEach(function(k){var v=n(rx('^[ \\t]*(?:'+di[k]+')[ \\t]*:[ \\t]*'+NUM+'[ \\t]*kr','im'));if(v!=null)d.driftItems[k]=v});
@@ -537,10 +551,10 @@ function applyImport(i,d){
   if(d.address&&h.address&&!sameAddress(d.address,h.address)){var cur=h.current;h=state.houses[i]=newHouse(cur);}
   var setIf=function(k,v){if(v!=null&&v!=='')h[k]=v};
   ['price','rent','living','extraArea','plot','rooms','bedrooms','year','kwh','household','energyClass','heatingNote','area','image','url'].forEach(function(k){setIf(k,d[k])});
-  if(d.drift!=null)h.drift=Math.round(d.drift);
+  if(d.drift!=null){h.drift=Math.round(d.drift);h.per.drift=d.driftPer||'mån';}
   if(d.floor!=null)h.floor=String(d.floor);
   if(d.address){h.address=d.address+(d.municipality?', '+d.municipality:'');h.name=h.name||d.address;}
-  if(d.driftItems)Object.keys(d.driftItems).forEach(function(k){h.driftItems[k]=d.driftItems[k]});
+  if(d.driftItems)Object.keys(d.driftItems).forEach(function(k){h.driftItems[k]=d.driftItems[k];h.per['driftItems.'+k]='år'});
   if(d.building)Object.keys(d.building).forEach(function(k){h.building[k]=d.building[k]});
   if(d.type){var ty=TYPES.filter(function(x){return x.toLowerCase()===String(d.type).toLowerCase()})[0];h.type=ty||(/lägenhet/i.test(d.type)?'Lägenhet':h.type);}
   if(d.tenure){var tn=TENURES.filter(function(x){return x.toLowerCase()===String(d.tenure).toLowerCase()})[0];if(tn)h.tenure=tn;}
@@ -558,38 +572,48 @@ function applyImport(i,d){
   if(d.info&&d.info.length)h.booliInfo=d.info.map(function(x){return x[1]}).slice(0,12);
   if(d.coop)h.booliInfo.unshift('Förening: '+d.coop);
   if(d.lat!=null&&d.lon!=null){var moved=h.lat!==d.lat||h.lon!==d.lon;h.lat=d.lat;h.lon=d.lon;if(moved){h.near={};h.nearNames={};}}
-  save();renderEditor(i);renderAll();
+  save();renderHouse(i);renderAll();
   if(h.lat!=null&&!Object.keys(h.near).length)fetchNear(i);else if(h.lat==null&&h.address)geocode(i);
   return d;
 }
 
-/* ---------- Redigerare ---------- */
+/* ---------- Fält ---------- */
 function opt(list,sel,empty){return list.map(function(x){return '<option'+(x===sel?' selected':'')+' value="'+esc(x)+'">'+esc(x||empty||'Okänt')+'</option>'}).join('')}
 function fNum(key,label,unit,hint,cls){
   return '<div class="field '+(cls||'')+'"><label>'+label+'</label><div class="unit"><input data-f="'+key+'" data-num inputmode="decimal"><span>'+(unit||'')+'</span></div>'+(hint?'<span class="hint">'+hint+'</span>':'')+'</div>';
 }
+// beloppsfält med växel för kr/mån eller kr/år
+function fMoney(key,label,hint,cls){
+  return '<div class="field '+(cls||'')+'"><label>'+label+'</label><div class="unit has-per"><input data-f="'+key+'" data-num inputmode="decimal">'+
+    '<span class="per-tg" role="group" aria-label="Period"><button type="button" data-per="'+key+'" data-v="mån" title="kr per månad">mån</button><button type="button" data-per="'+key+'" data-v="år" title="kr per år">år</button></span></div>'+
+    (hint?'<span class="hint">'+hint+'</span>':'')+'</div>';
+}
 function fText(key,label,cls,ph){return '<div class="field '+(cls||'')+'"><label>'+label+'</label><input data-f="'+key+'" placeholder="'+esc(ph||'')+'"></div>'}
 
-function editorHTML(i){
-  var L=letter(i);
-  return ''+
-  '<div class="ed-head"><div class="badge">'+L+'</div><div class="t"><b data-o="title"></b><span data-o="subtitle"></span></div>'+
-    '<div class="cost"><span data-o="cost"></span><small>per månad</small></div></div>'+
-  '<div class="ed-media"><img class="ed-img" data-o="img" alt="" hidden><div class="ed-ill" data-o="ill" aria-hidden="true"></div></div>'+
-  '<div class="ed-body">'+
-  '<div class="current-row"><label class="toggle"><input type="checkbox" data-f="current"><span class="sw"></span><span><b>Det här är min nuvarande bostad</b></span></label></div>'+
-  // finns i båda kolumnerna så att raderna hamnar i jämnhöjd
-  '<details class="grp" data-o="importGrp"><summary>📋 Hämta från annons</summary>'+
-  '<div class="grp-body" data-show="current"><span class="hint">Det här är din nuvarande bostad, så ingen annons behövs. Slå av reglaget ovan om du vill hämta uppgifter från en annons.</span></div>'+
-  '<div class="grp-body import-box" data-show="listing">'+
-    '<div class="field"><label>Länk till annonsen</label><input data-f="url" placeholder="https://www.booli.se/annons/…" inputmode="url"></div>'+
-    '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><a class="btn small" data-o="openLink" target="_blank" rel="noopener" hidden>Öppna annonsen ↗</a></div>'+
-    '<div class="field" style="margin-top:10px"><label>Klistra in här</label><textarea data-paste placeholder="Klistra in det som Husmyran-bokmärket kopierade – eller all text från annonsen eller mäklarens beskrivning"></textarea></div>'+
-    '<div class="msg" data-o="msg"></div>'+
-  '</div></details>'+
-  '<details class="grp" open><summary>🏠 Bostaden</summary><div class="grp-body"><div class="g2">'+
+/* ---------- Huvudkort och sektioner ---------- */
+function headHTML(i){
+  return '<div class="card head '+(i?'b':'a')+'" data-h="'+i+'">'+
+    '<div class="ed-head"><div class="badge">'+letter(i)+'</div><div class="t"><b data-o="title"></b><span data-o="subtitle"></span></div>'+
+      '<div class="cost"><span data-o="cost"></span><small>per månad</small></div></div>'+
+    '<div class="ed-media"><img class="ed-img" data-o="img" alt="" hidden><div class="ed-ill" data-o="ill" aria-hidden="true"></div></div>'+
+    '<div class="head-foot"><span data-o="headPrice"></span><span data-o="headSqm"></span></div></div>';
+}
+
+// Varje sektion har ett innehåll per bostad; båda visas sida vid sida i samma utfällbara kort
+var SECTIONS=[
+  {id:'import',title:'📋 Hämta från annons',body:function(i){return ''+
+    '<div data-show="current"><span class="hint">Det här är din nuvarande bostad, så ingen annons behövs. Slå av ”nuvarande bostad” under Bostaden om du vill hämta från en annons.</span></div>'+
+    '<div class="import-box" data-show="listing">'+
+      '<div class="field"><label>Länk till annonsen</label><input data-f="url" placeholder="https://www.booli.se/annons/…" inputmode="url"></div>'+
+      '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><a class="btn small" data-o="openLink" target="_blank" rel="noopener" hidden>Öppna annonsen ↗</a></div>'+
+      '<div class="field" style="margin-top:10px"><label>Klistra in här</label><textarea data-paste placeholder="Klistra in det som Husmyran-bokmärket kopierade – eller all text från annonsen eller mäklarens beskrivning"></textarea></div>'+
+      '<div class="msg" data-o="msg"></div>'+
+    '</div>'}},
+  {id:'house',title:'🏠 Bostaden',open:true,body:function(i){return ''+
+    '<label class="toggle" style="padding-top:0"><input type="checkbox" data-f="current"><span class="sw"></span><span><b>Det här är min nuvarande bostad</b></span></label>'+
+    '<div class="g2">'+
     fText('name','Namn','full','T.ex. Vårt hus i Mölndal')+
-    '<div class="field full"><label>Adress</label><input data-f="address" data-ac autocomplete="off" placeholder="Gata och nummer, ort"><div class="ac-list" data-o="ac" hidden></div><span class="hint">Börja skriva så kommer förslag – välj ett så hamnar bostaden på kartan.</span></div>'+
+    '<div class="field full"><label>Adress</label><input data-f="address" autocomplete="off" placeholder="Gata och nummer, ort"><div class="ac-list" data-o="ac" hidden></div><span class="hint">Börja skriva så kommer förslag – välj ett så hamnar bostaden på kartan.</span></div>'+
     fText('area','Område')+
     '<div class="field"><label>Typ</label><select data-f="type">'+opt(TYPES)+'</select></div>'+
     '<div class="field"><label>Upplåtelseform</label><select data-f="tenure">'+opt(TENURES)+'</select></div>'+
@@ -601,10 +625,10 @@ function editorHTML(i){
     '<div class="field"><label>Energiklass</label><select data-f="energyClass">'+opt(ENERGY,'','Ej angiven')+'</select></div>'+
     '<div class="field"><label>Uppvärmning</label><select data-f="heating">'+opt(HEATING)+'</select></div>'+
     fText('heatingNote','Uppvärmning – detaljer','','T.ex. golvvärme nedre plan')+
-  '</div></div></details>'+
-  '<details class="grp" open><summary>💰 Boendekostnad och lån</summary><div class="grp-body"><div class="g2">'+
+    '</div>'}},
+  {id:'loan',title:'💰 Boendekostnad och lån',open:true,body:function(i){return '<div class="g2">'+
     fNum('rent','Avgift / hyra','kr/mån')+
-    fNum('propertyFee','Fastighetsavgift','kr/år')+
+    fMoney('propertyFee','Fastighetsavgift')+
     '<div data-show="current" style="display:contents">'+fNum('existingLoan','Nuvarande lån','kr','Det du har kvar att betala')+
       fText('rateFixedUntil','Räntan bunden till','','T.ex. 2027-03 eller rörlig')+'</div>'+
     '<div data-show="listing" style="display:contents">'+
@@ -613,97 +637,110 @@ function editorHTML(i){
     '</div>'+
     fNum('rateOverride','Egen ränta','%','Tomt = samma som ovan')+
     '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå</option></select></div>'+
-    fNum('amortPct','Amortering','% /år')+
-  '</div><div class="calc-list" data-o="calc"></div></div></details>'+
-  '<details class="grp"><summary>⚡ Driftkostnad</summary><div class="grp-body"><div class="g2">'+
-    fNum('drift','Driftkostnad totalt','kr/mån','Används om du inte fyller i delarna nedan','full')+
-    '<div class="subhead">Fördelning (kr per år, som i annonsen)</div>'+
-    DRIFT_ITEMS.map(function(x){return fNum('driftItems.'+x[0],x[1],'kr/år')}).join('')+
+    fNum('amortPct','Amortering','% /år','','full')+
+    '</div><div class="calc-list" data-o="calc"></div>'}},
+  {id:'drift',title:'⚡ Driftkostnad',body:function(i){return '<div class="g2">'+
+    fMoney('drift','Driftkostnad totalt','Används om du inte fyller i delarna nedan','full')+
+    '<div class="subhead">Fördelning – välj om beloppet är per månad eller per år</div>'+
+    DRIFT_ITEMS.map(function(x){return fMoney('driftItems.'+x[0],x[1])}).join('')+
     '<div class="sumline" data-o="driftSum"></div>'+
     fNum('kwh','Elförbrukning','kWh/år')+fNum('household','Antal i hushållet','pers')+
-  '</div></div></details>'+
-  '<details class="grp"><summary>🧾 Övriga månadskostnader</summary><div class="grp-body"><div class="g2">'+
-    COSTS.map(function(x){return fNum('costs.'+x[0],x[1],'kr/mån')}).join('')+
-  '</div></div></details>'+
-  '<details class="grp"><summary>🧱 Byggnad</summary><div class="grp-body"><div class="g2">'+
-    BUILDING.map(function(x){return fText('building.'+x[0],x[1])}).join('')+
-  '</div></div></details>'+
-  '<details class="grp"><summary>✨ Egenskaper</summary><div class="grp-body"><div class="chips">'+
+    '</div>'}},
+  {id:'costs',title:'🧾 Övriga kostnader',body:function(i){return '<div class="g2">'+
+    COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
+    '<div class="sumline" data-o="costSum"></div></div>'}},
+  {id:'building',title:'🧱 Byggnad',body:function(i){return '<div class="g2">'+BUILDING.map(function(x){return fText('building.'+x[0],x[1])}).join('')+'</div>'}},
+  {id:'features',title:'✨ Egenskaper',body:function(i){return '<div class="chips">'+
     FEATURES.map(function(f){return '<label class="chip"><input type="checkbox" data-feat="'+f[0]+'"><span>'+f[1]+'</span></label>'}).join('')+
-  '</div><div class="chips" data-o="extraFeat" style="margin-top:10px"></div>'+
-  '<div class="add-feat"><input data-o="featInput" placeholder="Lägg till egen egenskap, t.ex. Gästhus"><button class="btn small" type="button" data-act="addFeat">Lägg till</button></div>'+
-  '<ul class="booli-info" data-o="booliInfo"></ul></div></details>'+
-  '<details class="grp"><summary>🌲 Närhet</summary><div class="grp-body">'+
+    '</div><div class="chips" data-o="extraFeat" style="margin-top:10px"></div>'+
+    '<div class="add-feat"><input data-o="featInput" placeholder="Lägg till egen egenskap, t.ex. Gästhus"><button class="btn small" type="button" data-act="addFeat">Lägg till</button></div>'+
+    '<ul class="booli-info" data-o="booliInfo"></ul>'}},
+  {id:'near',title:'🌲 Närhet',body:function(i){return ''+
     '<div class="near-status" data-o="nearStatus"></div>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn small" type="button" data-act="near">Räkna ut avstånd</button></div>'+
-    '<div class="g3">'+NEAR.map(function(n){return '<div class="field"><label>'+n[2]+' '+n[1]+'</label><div class="unit"><input data-near="'+n[0]+'" inputmode="numeric"><span>m</span></div><span class="hint" data-nearname="'+n[0]+'"></span></div>'}).join('')+'</div>'+
-  '</div></details>'+
-  '<details class="grp"><summary>📝 Anteckningar</summary><div class="grp-body"><div class="field"><textarea data-f="notes" rows="4" placeholder="Känsla från visningen, renoveringsbehov, frågor till mäklaren…"></textarea></div>'+
-    '<div style="margin-top:12px"><button class="btn small" type="button" data-act="clear">Töm bostad '+L+'</button></div></div></details>'+
-  '</div>';
-}
+    '<div style="margin-bottom:10px"><button class="btn small" type="button" data-act="near">Räkna ut avstånd</button></div>'+
+    '<div class="g2">'+NEAR.map(function(n){return '<div class="field"><label>'+n[2]+' '+n[1]+'</label><div class="unit"><input data-near="'+n[0]+'" inputmode="numeric"><span>m</span></div><span class="hint" data-nearname="'+n[0]+'"></span></div>'}).join('')+'</div>'}},
+  {id:'notes',title:'📝 Anteckningar',body:function(i){return ''+
+    '<div class="field"><textarea data-f="notes" rows="4" placeholder="Känsla från visningen, renoveringsbehov, frågor till mäklaren…"></textarea></div>'+
+    '<div style="margin-top:12px"><button class="btn small" type="button" data-act="clear">Töm bostad '+letter(i)+'</button></div>'}}
+];
 
-function buildEditors(){
-  var box=$('#editors');box.innerHTML='';
-  [0,1].forEach(function(i){
-    var el=document.createElement('div');
-    el.className='card editor '+(i?'b':'a')+(state.tab===i?' active':'');
-    el.dataset.i=i;el.innerHTML=editorHTML(i);box.appendChild(el);
-    bindEditor(el,i);renderEditor(i);
-  });
+function build(){
+  $('#heads').innerHTML=headHTML(0)+headHTML(1);
+  $('#sections').innerHTML=SECTIONS.map(function(s){
+    var open=state.open[s.id]!=null?state.open[s.id]:(s.id==='import'?importShouldOpen():!!s.open);
+    return '<details class="card sec" data-sec="'+s.id+'"'+(open?' open':'')+'><summary>'+s.title+'</summary><div class="pair">'+
+      [0,1].map(function(i){return '<div class="col '+(i?'b':'a')+'" data-h="'+i+'"><div class="col-tag" data-o="tag"></div>'+s.body(i)+'</div>'}).join('')+
+      '</div></details>';
+  }).join('');
+  $$('#sections details.sec').forEach(function(d){d.addEventListener('toggle',function(){state.open[d.dataset.sec]=d.open;save()})});
+  [0,1].forEach(renderHouse);
+  setTab(state.tab||0);
 }
+function importShouldOpen(){return state.houses.some(function(h){return !h.current&&!h.price&&!h.address&&!h.url})}
 
-function bindEditor(el,i){
-  var acTimer;
-  el.addEventListener('input',function(e){
-    var t=e.target,h=state.houses[i];
+function houseOf(e){var c=e.target.closest&&e.target.closest('[data-h]');return c?+c.dataset.h:null}
+var acTimer;
+function bindApp(){
+  var app=$('#app');
+  app.addEventListener('input',function(e){
+    var i=houseOf(e);if(i==null)return;var t=e.target,h=state.houses[i];
     if(t.dataset.f&&t.type!=='checkbox'){
       var k=t.dataset.f;
       setPath(h,k,t.hasAttribute('data-num')?num(t.value):t.value);
       if(k==='address'){h._addrDirty=true;clearTimeout(acTimer);acTimer=setTimeout(function(){suggest(i,t.value)},350)}
-      save();renderAll();renderEditorOutputs(i);
+      save();renderAll();renderOutputs(i);
     }else if(t.dataset.near){
       h.near[t.dataset.near]=num(t.value);h.nearNames[t.dataset.near]='';save();renderAll();
     }else if(t.hasAttribute('data-paste')){
       handlePaste(i,t);
     }
   });
-  el.addEventListener('change',function(e){
-    var t=e.target,h=state.houses[i];
+  app.addEventListener('change',function(e){
+    var i=houseOf(e);if(i==null)return;var t=e.target,h=state.houses[i];
     if(t.dataset.feat){h.features[t.dataset.feat]=t.checked;save();renderAll();}
-    if(t.dataset.f==='current'){h.current=t.checked;save();renderEditor(i);renderAll();}
-    if(t.dataset.f==='amortMode')renderEditorOutputs(i);
+    if(t.dataset.f==='current'){h.current=t.checked;save();renderHouse(i);renderAll();}
+    if(t.dataset.f==='amortMode')renderOutputs(i);
   });
-  el.addEventListener('focusout',function(e){
-    var t=e.target;
+  app.addEventListener('focusout',function(e){
+    var i=houseOf(e);if(i==null)return;var t=e.target;
     if(t.hasAttribute&&t.hasAttribute('data-num')){var v=getPath(state.houses[i],t.dataset.f);t.value=v==null?'':fmtNum(v,2)}
     if(t.dataset&&t.dataset.f==='address'){setTimeout(function(){
       hideAc(i);var h=state.houses[i];
       if(h._addrDirty){h._addrDirty=false;if(h.address)geocode(i)}
     },200)}
   });
-  el.addEventListener('keydown',function(e){
-    var t=e.target;if(!(t.dataset&&t.dataset.f==='address'))return;
-    var list=$('[data-o="ac"]',el);if(list.hidden)return;
+  app.addEventListener('keydown',function(e){
+    var i=houseOf(e);if(i==null)return;var t=e.target;
+    if(t.dataset&&t.dataset.o==='featInput'&&e.key==='Enter'){e.preventDefault();addFeature(i);return}
+    if(!(t.dataset&&t.dataset.f==='address'))return;
+    var list=hq(i,'[data-o="ac"]');if(!list||list.hidden)return;
     var items=$$('button',list),cur=items.findIndex(function(b){return b.classList.contains('on')});
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();var nx=e.key==='ArrowDown'?Math.min(items.length-1,cur+1):Math.max(0,cur-1);
       items.forEach(function(b,k){b.classList.toggle('on',k===nx)});}
     else if(e.key==='Enter'&&items.length){e.preventDefault();(items[cur>=0?cur:0]).dispatchEvent(new Event('mousedown'));}
     else if(e.key==='Escape')hideAc(i);
   });
-  el.addEventListener('click',function(e){
-    var b=e.target.closest('[data-act]');if(!b)return;var h=state.houses[i];
-    if(b.dataset.act==='addFeat'){var inp=$('[data-o="featInput"]',el),v=inp.value.trim();if(v&&h.extraFeatures.indexOf(v)<0){h.extraFeatures.push(v);inp.value='';save();renderEditorOutputs(i);renderAll();}}
-    if(b.dataset.act==='rmFeat'){h.extraFeatures.splice(+b.dataset.n,1);save();renderEditorOutputs(i);renderAll();}
+  app.addEventListener('click',function(e){
+    var i=houseOf(e);if(i==null)return;var h=state.houses[i];
+    var p=e.target.closest('[data-per]');
+    if(p){
+      // byt period och räkna om beloppet så att kostnaden blir densamma
+      var key=p.dataset.per,to=p.dataset.v,from=perOf(h,key);
+      if(to!==from){var v=getPath(h,key);if(v!=null)setPath(h,key,Math.round(to==='år'?v*12:v/12));h.per[key]=to;save();renderHouse(i);renderAll();}
+      return;
+    }
+    var b=e.target.closest('[data-act]');if(!b)return;
+    if(b.dataset.act==='addFeat')addFeature(i);
+    if(b.dataset.act==='rmFeat'){h.extraFeatures.splice(+b.dataset.n,1);save();renderOutputs(i);renderAll();}
     if(b.dataset.act==='near')fetchNear(i);
-    if(b.dataset.act==='clear'&&confirm('Töm alla uppgifter för bostad '+letter(i)+'?')){state.houses[i]=newHouse(h.current);save();renderEditor(i);renderAll();}
+    if(b.dataset.act==='clear'&&confirm('Töm alla uppgifter för bostad '+letter(i)+'?')){state.houses[i]=newHouse(h.current);save();renderHouse(i);renderAll();}
   });
-  $('[data-o="featInput"]',el).addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('[data-act="addFeat"]',el).click()}});
 }
+function addFeature(i){var h=state.houses[i],inp=hq(i,'[data-o="featInput"]'),v=inp.value.trim();if(v&&h.extraFeatures.indexOf(v)<0){h.extraFeatures.push(v);inp.value='';save();renderOutputs(i);renderAll();}}
 
 function showMsg(i,type,text){
-  var m=$('.editor[data-i="'+i+'"] [data-o="msg"]');if(!m)return;
-  $('.editor[data-i="'+i+'"] [data-o="importGrp"]').open=true;
+  var m=hq(i,'[data-o="msg"]');if(!m)return;
+  var d=$('details[data-sec="import"]');if(d)d.open=true;
   m.className='msg show '+type;m.textContent=text;
 }
 
@@ -713,20 +750,15 @@ function handlePaste(i,ta){
   if(/^\{[\s\S]*\}$/.test(v)){try{var j=JSON.parse(v);if(j&&j.husmyran)d=j}catch(e){}}
   if(!d&&/__typename|listPrice/.test(v))d=extractBooli(v);
   if(!d&&/^https?:\/\/\S+$/.test(v)){
-    state.houses[i].url=v;save();renderEditor(i);
+    state.houses[i].url=v;save();renderHouse(i);
     showMsg(i,'info','Länken är sparad. Booli låter inte andra sidor läsa annonsen direkt, så öppna annonsen och klicka på Husmyran-bokmärket (se instruktionen längre ner).');
     ta.value='';return;
   }
   if(!d)d={husmyran:1,text:v};
   ta.value='';
-  var r=applyImportSafe(i,d);
-  if(!r){showMsg(i,'err','Hittade inga bostadsuppgifter i texten. Prova Husmyran-bokmärket i stället.');return}
-  showMsg(i,'ok',importSummary(r));
-}
-function applyImportSafe(i,d){
   var test=d.text?parsePlainText(d.text):d;
-  if(!test.ok)return null;
-  return applyImport(i,d);
+  if(!test.ok){showMsg(i,'err','Hittade inga bostadsuppgifter i texten. Prova Husmyran-bokmärket i stället.');return}
+  showMsg(i,'ok',importSummary(applyImport(i,d)));
 }
 function importSummary(d){
   var got=[];if(d.price)got.push('pris');if(d.rent)got.push('avgift');if(d.drift||Object.keys(d.driftItems||{}).length)got.push('driftkostnad');
@@ -734,60 +766,70 @@ function importSummary(d){
   return 'Klart! Hämtade '+(got.length?got.join(', '):'uppgifter')+'. Kontrollera gärna fälten och fyll i det som saknas.';
 }
 
-function renderEditor(i){
-  var el=$('.editor[data-i="'+i+'"]');if(!el)return;var h=state.houses[i];
-  $$('[data-f]',el).forEach(function(inp){var v=getPath(h,inp.dataset.f);
+// fyll alla fält för bostad i från state
+function renderHouse(i){
+  var h=state.houses[i];
+  hqa(i,'[data-f]').forEach(function(inp){var v=getPath(h,inp.dataset.f);
     if(inp.type==='checkbox')inp.checked=!!v;
     else if(inp.hasAttribute('data-num'))inp.value=v==null?'':fmtNum(v,2);else inp.value=v==null?'':v;});
-  $$('[data-feat]',el).forEach(function(c){c.checked=!!h.features[c.dataset.feat]});
-  $$('[data-near]',el).forEach(function(inp){var v=h.near[inp.dataset.near];inp.value=v==null?'':Math.round(v)});
-  // importrutan är bara utfälld för en tom annonsbostad
-  $('[data-o="importGrp"]',el).open=!h.current&&!h.price&&!h.address&&!h.url;
-  renderEditorOutputs(i);
+  hqa(i,'[data-feat]').forEach(function(c){c.checked=!!h.features[c.dataset.feat]});
+  hqa(i,'[data-near]').forEach(function(inp){var v=h.near[inp.dataset.near];inp.value=v==null?'':Math.round(v)});
+  renderOutputs(i);
 }
 
-function renderEditorOutputs(i){
-  var el=$('.editor[data-i="'+i+'"]');if(!el)return;var h=state.houses[i],c=calc(h);
-  $$('[data-show="listing"]',el).forEach(function(x){x.hidden=h.current});
-  $$('[data-show="current"]',el).forEach(function(x){x.hidden=!h.current});
-  $('[data-o="priceLabel"]',el).textContent=h.current?'Bostadens värde (uppskattat)':'Pris';
-  $('[data-o="title"]',el).textContent=houseName(i);
-  $('[data-o="subtitle"]',el).textContent=[h.current?'Nuvarande':'',h.type,h.living?fmtNum(h.living,1)+' m²':'',h.rooms?fmtNum(h.rooms,1)+' rum':'',h.area].filter(Boolean).join(' · ');
-  $('[data-o="cost"]',el).textContent=c.has?kr(c.total):'–';
-  var img=$('[data-o="img"]',el),ill=$('[data-o="ill"]',el);
+function renderOutputs(i){
+  var h=state.houses[i],c=calc(h);if(!hq(i,'[data-o="title"]'))return;
+  hqa(i,'[data-show="listing"]').forEach(function(x){x.hidden=h.current});
+  hqa(i,'[data-show="current"]').forEach(function(x){x.hidden=!h.current});
+  hqa(i,'[data-o="tag"]').forEach(function(x){x.textContent=letter(i)+' · '+houseName(i)});
+  hqa(i,'[data-per]').forEach(function(b){b.classList.toggle('on',perOf(h,b.dataset.per)===b.dataset.v)});
+  hq(i,'[data-o="priceLabel"]').textContent=h.current?'Bostadens värde (uppskattat)':'Pris';
+  hq(i,'[data-o="title"]').textContent=houseName(i);
+  hq(i,'[data-o="subtitle"]').textContent=[h.current?'Nuvarande':'',h.type,h.living?fmtNum(h.living,1)+' m²':'',h.rooms?fmtNum(h.rooms,1)+' rum':'',h.area].filter(Boolean).join(' · ');
+  hq(i,'[data-o="cost"]').textContent=c.has?kr(c.total):'–';
+  hq(i,'[data-o="headPrice"]').textContent=c.price?(h.current?'Värde ':'Pris ')+kr(c.price):(h.current?'Värde saknas':'Pris saknas');
+  hq(i,'[data-o="headSqm"]').textContent=c.sqm?kr(c.sqm)+'/m²':'';
+  var img=hq(i,'[data-o="img"]'),ill=hq(i,'[data-o="ill"]');
   if(h.image){if(img.getAttribute('src')!==h.image)img.src=h.image;img.hidden=false;ill.hidden=true}
   else{img.hidden=true;ill.hidden=false;var kind=h.type==='Lägenhet'?'apartment':'house';
     if(ill.dataset.kind!==kind){ill.dataset.kind=kind;ill.innerHTML=illustration(kind)}}
-  var ol=$('[data-o="openLink"]',el);if(/^https?:\/\//.test(h.url||'')){ol.href=h.url;ol.hidden=false}else ol.hidden=true;
-  var amortInp=$('[data-f="amortPct"]',el);amortInp.disabled=h.amortMode!=='manual';
+  var ol=hq(i,'[data-o="openLink"]');if(/^https?:\/\//.test(h.url||'')){ol.href=h.url;ol.hidden=false}else ol.hidden=true;
+  var amortInp=hq(i,'[data-f="amortPct"]');amortInp.disabled=h.amortMode!=='manual';
   if(h.amortMode!=='manual'){amortInp.value='';amortInp.placeholder=fmtNum(c.autoAmort)+' (automatiskt)'}
-  $('[data-f="propertyFee"]',el).placeholder=h.propertyFee==null?fmtNum(c.autoFee)+' (uppskattat)':'';
-  var dy=driftYearItems(h);
-  $('[data-f="drift"]',el).disabled=dy!=null;
-  if(dy!=null)$('[data-f="drift"]',el).value=fmtNum(dy/12);
-  $('[data-o="driftSum"]',el).innerHTML=dy!=null?'<span>Summa '+kr(dy)+'/år</span><span>'+kr(dy/12)+'/mån</span>':'<span>Inga delar ifyllda</span><span>'+(h.drift!=null?kr(h.drift)+'/mån':'')+'</span>';
-  function row(a,b){return '<div><span>'+esc(a)+'</span><span>'+esc(b)+'</span></div>'}
+  hq(i,'[data-f="propertyFee"]').placeholder=h.propertyFee==null?fmtNum(perOf(h,'propertyFee')==='år'?c.autoFee:c.autoFee/12)+' (uppsk.)':'';
+  // driftkostnad: delarna styr totalen om de är ifyllda
+  var dm=driftItemsMonthly(h),dIn=hq(i,'[data-f="drift"]');
+  dIn.disabled=dm!=null;
+  if(dm!=null)dIn.value=fmtNum(perOf(h,'drift')==='år'?dm*12:dm);
+  hq(i,'[data-o="driftSum"]').innerHTML=dm!=null?'<span>Summa '+kr(dm)+'/mån</span><span>'+kr(dm*12)+'/år</span>':
+    '<span>Inga delar ifyllda</span><span>'+(h.drift!=null?kr(monthly(h,'drift'))+'/mån':'')+'</span>';
+  var cm=sumMonthly(h,'costs.',COSTS);
+  hq(i,'[data-o="costSum"]').innerHTML='<span>Summa '+(cm!=null?kr(cm)+'/mån':'–')+'</span><span>'+(cm!=null?kr(cm*12)+'/år':'')+'</span>';
+  function row(a,b,cls){return '<div'+(cls?' class="'+cls+'"':'')+'><span>'+esc(a)+'</span><span>'+esc(b)+'</span></div>'}
+  // samma rader för båda bostäderna så att kolumnerna hamnar i jämnhöjd
+  var m=function(v){return v?kr(v)+'/mån':'–'};
   var html='';
   if(h.current){
     html=row('Bostadens värde',c.price?kr(c.price):'–')+
-      (h.existingLoan==null?row('Fyll i ditt nuvarande lån','')
-        :row('Lån'+(c.price?' ('+fmtNum(c.ltv*100,1)+' % belåning)':''),kr(c.loan)));
+      (h.existingLoan==null?row('Lån','Fyll i ditt nuvarande lån'):row('Lån'+(c.price?' ('+fmtNum(c.ltv*100,1)+' % belåning)':''),kr(c.loan)));
   }else{
     html=row('Kontantinsats '+fmtNum(state.loan.downPct,1)+' %'+(c.extra?' + extra':''),c.price?kr(c.down+c.extra):'Fyll i pris')+
       row('Lån'+(c.price?' ('+fmtNum(c.ltv*100,1)+' % belåning)':''),c.price?kr(c.loan):'–');
   }
-  // samma rader för båda bostäderna så att kolumnerna hamnar i jämnhöjd
-  var m=function(v){return v?kr(v)+'/mån':'–'};
   html+=row('Ränta '+fmtNum(c.rate,2)+' %',m(c.interest))+(state.loan.deduction?row('Ränteavdrag',c.deduct?'−'+m(c.deduct):'–'):'')+
     row('Amortering '+fmtNum(c.amortPct,1)+' %',m(c.amort))+row('Avgift',m(c.rent))+row('Driftkostnad',m(c.drift))+
     row('Fastighetsavgift',m(c.fee))+row('Övriga kostnader',m(c.costs))+
-    row('Månadskostnad',c.has?kr(c.total):'–');
-  $('[data-o="calc"]',el).innerHTML=html;
-  $('[data-o="extraFeat"]',el).innerHTML=h.extraFeatures.map(function(f,n){return '<span class="tag-x">'+esc(f)+'<button type="button" data-act="rmFeat" data-n="'+n+'" aria-label="Ta bort">×</button></span>'}).join('');
-  $('[data-o="booliInfo"]',el).innerHTML=(h.booliInfo||[]).length?'<li><b>Från annonsen:</b></li>'+h.booliInfo.map(function(x){return '<li>• '+esc(x)+'</li>'}).join(''):'';
-  NEAR.forEach(function(n){var s=$('[data-nearname="'+n[0]+'"]',el);if(s)s.textContent=h.nearNames[n[0]]||''});
-  var st=$('[data-o="nearStatus"]',el);
-  if(!st.dataset.busy)st.textContent=h.lat!=null?'Avstånden räknas fågelvägen från bostadens läge. Du kan ändra dem själv.':'Läget saknas – skriv in adressen under ”Bostaden”.';
+    row('Månadskostnad',c.has?kr(c.total):'–','tot')+
+    row('Engångskostnader vid köp','','gap')+
+    row('Lagfart (1,5 % + 825 kr)',h.current?'–':(c.lagfart?kr(c.lagfart):(h.tenure==='Äganderätt'?'–':'Ingen vid bostadsrätt')))+
+    row('Pantbrev (2 % + 375 kr)',h.current?'–':(c.pantbrev?kr(c.pantbrev):(h.tenure==='Äganderätt'?(c.price?'Inga nya behövs':'–'):'Ingen vid bostadsrätt')))+
+    row('Kontanter som behövs',h.current?'–':(c.price?kr(c.cash):'–'),'tot');
+  hq(i,'[data-o="calc"]').innerHTML=html;
+  hq(i,'[data-o="extraFeat"]').innerHTML=h.extraFeatures.map(function(f,n){return '<span class="tag-x">'+esc(f)+'<button type="button" data-act="rmFeat" data-n="'+n+'" aria-label="Ta bort">×</button></span>'}).join('');
+  hq(i,'[data-o="booliInfo"]').innerHTML=(h.booliInfo||[]).length?'<li><b>Från annonsen:</b></li>'+h.booliInfo.map(function(x){return '<li>• '+esc(x)+'</li>'}).join(''):'';
+  NEAR.forEach(function(n){var s=hq(i,'[data-nearname="'+n[0]+'"]');if(s)s.textContent=h.nearNames[n[0]]||''});
+  var st=hq(i,'[data-o="nearStatus"]');
+  if(!st.dataset.busy)st.textContent=h.lat!=null?'Avstånden räknas fågelvägen. Du kan ändra dem själv.':'Läget saknas – skriv in adressen under Bostaden.';
 }
 
 /* Generisk bild när ingen annonsbild finns – färgen följer bostadens (A/B) */
@@ -809,7 +851,7 @@ function illustration(kind){
     '<path d="M140 86 205 40l65 46z" fill="var(--ink)" opacity=".8"/><rect x="232" y="48" width="10" height="22" fill="var(--ink)" opacity=".8"/>'+
     '<rect x="164" y="96" width="22" height="18" rx="2" fill="#fff"/><rect x="224" y="96" width="22" height="18" rx="2" fill="#fff"/>'+
     '<rect x="196" y="108" width="18" height="32" rx="2" fill="#fff"/><circle cx="210" cy="125" r="1.6" fill="var(--c)"/>'+
-    '<path d="M196 140h18l6 0" stroke="#bcd4c4" stroke-width="2"/>'+tree(112,1)+tree(300,.85)+'</svg>';
+    tree(112,1)+tree(300,.85)+'</svg>';
 }
 
 /* ---------- Adressförslag (Photon / OpenStreetMap) ---------- */
@@ -830,9 +872,9 @@ function photon(q,limit){
       }).slice(0,6);
     });
 }
-function hideAc(i){var l=$('.editor[data-i="'+i+'"] [data-o="ac"]');if(l)l.hidden=true}
+function hideAc(i){var l=hq(i,'[data-o="ac"]');if(l)l.hidden=true}
 function suggest(i,q){
-  var list=$('.editor[data-i="'+i+'"] [data-o="ac"]');if(!list)return;
+  var list=hq(i,'[data-o="ac"]');if(!list)return;
   if(!q||q.trim().length<3){list.hidden=true;return}
   photon(q).then(function(fs){
     if(state.houses[i].address!==q)return;
@@ -852,7 +894,7 @@ function pickPlace(i,f){
   h._addrDirty=false;
   if(!h.area&&(p.district||p.locality))h.area=p.district||p.locality;
   h.lat=f.geometry.coordinates[1];h.lon=f.geometry.coordinates[0];h.near={};h.nearNames={};
-  hideAc(i);save();renderEditor(i);renderAll();fetchNear(i);
+  hideAc(i);save();renderHouse(i);renderAll();fetchNear(i);
   if(p.type==='street')nearStatus(i,'Husnumret finns inte i kartdatan, så markören står på gatan. Dra den till rätt hus på kartan om du vill.');
 }
 function geocode(i){
@@ -868,10 +910,6 @@ function geocode(i){
 /* ---------- Sammanfattning & jämförelse ---------- */
 function renderAll(){
   var A=state.houses[0],B=state.houses[1],ca=calc(A),cb=calc(B);
-  var sumHTML=[0,1].map(function(i){var h=state.houses[i],c=i?cb:ca;
-    return '<div class="sum '+(i?'b':'a')+'"><div class="who">'+letter(i)+' · '+esc(houseLabel(i))+'</div><div class="name">'+esc(h.name||h.address||'Ej ifylld')+'</div>'+
-      '<div class="big">'+(c.has?kr(c.total):'–')+' <small>/mån</small></div>'+
-      '<div class="sub">'+(c.price?kr(c.price)+(h.living?' · '+kr(c.sqm)+'/m²':''):(h.current?'Värde saknas':'Pris saknas'))+'</div></div>';}).join('');
   var verdict='';
   if(ca.has&&cb.has){
     var d=cb.total-ca.total,ab=Math.abs(d);
@@ -880,9 +918,9 @@ function renderAll(){
       verdict=houseName(ni)+' skulle kosta '+kr(ab)+' '+(more?'mer':'mindre')+' per månad än din nuvarande bostad ('+kr(ab*12)+' per år).';}
     else verdict=houseName(d>0?0:1)+' är '+kr(ab)+' billigare per månad ('+kr(ab*12)+' per år).';
   }
-  $('#summary').innerHTML=sumHTML+(verdict?'<div class="verdict">'+esc(verdict)+'</div>':'');
+  var v=$('#verdict');v.textContent=verdict;v.hidden=!verdict;
   $$('#tabs button').forEach(function(b){var i=+b.dataset.i;b.textContent=letter(i)+' · '+(state.houses[i].current?'Nuvarande':'Bostad '+letter(i))});
-  [0,1].forEach(function(i){var el=$('.editor[data-i="'+i+'"]');if(el){var c=i?cb:ca;$('[data-o="cost"]',el).textContent=c.has?kr(c.total):'–'}});
+  [0,1].forEach(function(i){var c=i?cb:ca,el=hq(i,'[data-o="cost"]');if(el)el.textContent=c.has?kr(c.total):'–'});
   renderCompare(A,B,ca,cb);
   updateMap();
 }
@@ -900,18 +938,16 @@ function renderCompare(A,B,ca,cb){
   }
   function krOr(v){return v!=null?kr(v):'–'}
   function rk(label,va,vb,dir,cls,sub){r(label,va,vb,krOr(va),krOr(vb),dir,cls,sub)}
+  // månadsbelopp med årsbelopp under
+  function rm(label,va,vb,dir){var f=function(v){return v!=null?kr(v)+'<br><small>'+kr(v*12)+'/år</small>':'–'};r(label,va,vb,f(va),f(vb),dir)}
   function any(va,vb){return (va!=null&&va!=='')||(vb!=null&&vb!=='')}
   function txt(label,va,vb){if(any(va,vb))r(label,null,null,esc(va||'–'),esc(vb||'–'),0)}
   function unit(v,u,dec){return v!=null?fmtNum(v,dec==null?1:dec)+' '+u:'–'}
   var cur=function(h){return h.current};
 
-  sec('Ekonomi');
+  sec('Ekonomi per månad');
   r(A.current||B.current?'Pris / värde':'Pris',ca.price||null,cb.price||null,ca.price?kr(ca.price):'–',cb.price?kr(cb.price):'–',A.current||B.current?0:-1);
   r('Pris per m²',ca.sqm,cb.sqm,krOr(ca.sqm),krOr(cb.sqm),A.current||B.current?0:-1);
-  if(!cur(A)||!cur(B)){
-    r('Kontantinsats '+fmtNum(state.loan.downPct,1)+' %',null,null,cur(A)?'–':kr(ca.down),cur(B)?'–':kr(cb.down),0);
-    if(ca.extra||cb.extra)r('Extra kontantinsats',null,null,cur(A)?'–':kr(ca.extra),cur(B)?'–':kr(cb.extra),0);
-  }
   r('Lånebelopp',ca.loan,cb.loan,kr(ca.loan)+(ca.price?'<br><small>'+fmtNum(ca.ltv*100,1)+' % belåning</small>':''),kr(cb.loan)+(cb.price?'<br><small>'+fmtNum(cb.ltv*100,1)+' % belåning</small>':''),-1);
   rk('Ränta',ca.interest,cb.interest,-1,'',fmtNum(ca.rate,2)+' % / '+fmtNum(cb.rate,2)+' %');
   txt('Räntan bunden till',A.current?A.rateFixedUntil:'',B.current?B.rateFixedUntil:'');
@@ -919,22 +955,27 @@ function renderCompare(A,B,ca,cb){
   r('Amortering',ca.amort,cb.amort,kr(ca.amort)+'<br><small>'+fmtNum(ca.amortPct,1)+' %/år</small>',kr(cb.amort)+'<br><small>'+fmtNum(cb.amortPct,1)+' %/år</small>',-1);
   if(any(A.rent,B.rent))rk('Avgift / hyra',A.rent,B.rent,-1);
   var dA=driftMonthly(A),dB=driftMonthly(B);
-  if(any(dA,dB))rk('Driftkostnad',dA,dB,-1,'','per månad');
+  if(any(dA,dB))rm('Driftkostnad',dA,dB,-1);
   rk('Fastighetsavgift',ca.fee,cb.fee,-1);
-  COSTS.forEach(function(x){var a=A.costs[x[0]],b=B.costs[x[0]];if(any(a,b))rk(x[1],a,b,-1)});
+  COSTS.forEach(function(x){var a=monthly(A,'costs.'+x[0]),b=monthly(B,'costs.'+x[0]);if(any(a,b))rm(x[1],a,b,-1)});
   rk('Månadskostnad',ca.has?ca.total:null,cb.has?cb.total:null,-1,'total',state.loan.deduction?'efter ränteavdrag':'före ränteavdrag');
   rk('Månadskostnad utan amortering',ca.has?ca.totalExAmort:null,cb.has?cb.totalExAmort:null,-1,'','amorteringen är ett sparande');
+
   if(!cur(A)||!cur(B)){
-    var la=ca.lagfart+ca.pantbrev,lb=cb.lagfart+cb.pantbrev;
-    if(la||lb)r('Lagfart + pantbrev (engång)',null,null,cur(A)?'–':kr(la),cur(B)?'–':kr(lb),0);
-    r('Kontanter som behövs',ca.cash,cb.cash,cur(A)?'–':kr(ca.cash),cur(B)?'–':kr(cb.cash),-1,'','insats + engångskostnader');
+    sec('Vid köp (engångskostnader)');
+    var dash=function(h,v){return h.current?'–':kr(v)};
+    r('Kontantinsats '+fmtNum(state.loan.downPct,1)+' %',null,null,dash(A,ca.down),dash(B,cb.down),0);
+    if(ca.extra||cb.extra)r('Extra kontantinsats',null,null,dash(A,ca.extra),dash(B,cb.extra),0);
+    r('Lagfart',cur(A)?null:ca.lagfart,cur(B)?null:cb.lagfart,dash(A,ca.lagfart),dash(B,cb.lagfart),-1,'','1,5 % av priset + 825 kr');
+    r('Pantbrev',cur(A)?null:ca.pantbrev,cur(B)?null:cb.pantbrev,dash(A,ca.pantbrev),dash(B,cb.pantbrev),-1,'','2 % av nya pantbrev + 375 kr');
+    r('Kontanter som behövs',ca.cash,cb.cash,cur(A)?'–':kr(ca.cash),cur(B)?'–':kr(cb.cash),-1,'total','insats + lagfart + pantbrev');
   }
 
   var anyDrift=DRIFT_ITEMS.some(function(x){return any(A.driftItems[x[0]],B.driftItems[x[0]])})||any(A.kwh,B.kwh);
   if(anyDrift){
-    sec('Driftkostnad per år');
-    DRIFT_ITEMS.forEach(function(x){var a=A.driftItems[x[0]],b=B.driftItems[x[0]];if(any(a,b))rk(x[1],a,b,-1)});
-    var ya=driftYearItems(A),yb=driftYearItems(B);if(ya!=null||yb!=null)rk('Summa',ya,yb,-1,'total');
+    sec('Driftkostnad – fördelning');
+    DRIFT_ITEMS.forEach(function(x){var a=monthly(A,'driftItems.'+x[0]),b=monthly(B,'driftItems.'+x[0]);if(any(a,b))rm(x[1],a,b,-1)});
+    var ya=driftItemsMonthly(A),yb=driftItemsMonthly(B);if(ya!=null||yb!=null)rm('Summa',ya,yb,-1);
     if(any(A.kwh,B.kwh))r('Elförbrukning',A.kwh,B.kwh,unit(A.kwh,'kWh/år',0),unit(B.kwh,'kWh/år',0),-1);
     if(any(A.household,B.household))r('Antal i hushållet',null,null,A.household||'–',B.household||'–',0);
   }
@@ -1034,7 +1075,7 @@ function overpass(q){
   return job;
 }
 function nearStatus(i,text,busy){
-  var st=$('.editor[data-i="'+i+'"] [data-o="nearStatus"]');if(!st)return;
+  var st=hq(i,'[data-o="nearStatus"]');if(!st)return;
   st.textContent=text;if(busy)st.dataset.busy='1';else delete st.dataset.busy;
 }
 function fetchNear(i){
@@ -1070,7 +1111,7 @@ function fetchNear(i){
         });
         var hh=state.houses[i];
         part.keys.forEach(function(k){hh.near[k]=best[k]!=null?Math.round(best[k]):null;hh.nearNames[k]=names[k]||(best[k]==null?'Inget inom '+fmtNum(NEAR_RADIUS[k],1)+' km':'')});
-        save();renderEditor(i);renderAll();
+        save();renderHouse(i);renderAll();
       }).catch(function(){failed++}).then(function(){
         done++;if(done<parts.length)nearStatus(i,'Räknar ut avstånd… ('+done+' av '+parts.length+')',true);
       });
@@ -1119,10 +1160,10 @@ function updateMap(){
 /* ---------- Övrigt UI ---------- */
 function bindGlobal(){
   ['rate','downPct'].forEach(function(id){var el=$('#'+id);
-    el.addEventListener('input',function(){state.loan[id]=num(el.value)||0;save();renderAll();[0,1].forEach(renderEditorOutputs)});
+    el.addEventListener('input',function(){state.loan[id]=num(el.value)||0;save();renderAll();[0,1].forEach(renderOutputs)});
     el.addEventListener('blur',function(){el.value=fmtNum(state.loan[id],2)});});
   var dd=$('#deduction');
-  dd.addEventListener('change',function(){state.loan.deduction=dd.checked;save();renderAll();[0,1].forEach(renderEditorOutputs)});
+  dd.addEventListener('change',function(){state.loan.deduction=dd.checked;save();renderAll();[0,1].forEach(renderOutputs)});
   bindLoanValues();
   $$('#tabs button').forEach(function(b){b.addEventListener('click',function(){setTab(+b.dataset.i)})});
   var code=bookmarkletCode();$('#bmLink').href=code;
@@ -1132,7 +1173,7 @@ function bindGlobal(){
     var done=function(){alert('Bokmärkeskoden är kopierad.')};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).then(done,function(){prompt('Kopiera koden:',code)});else prompt('Kopiera koden:',code);
   });
-  $('#btnReset').addEventListener('click',function(){if(confirm('Rensa båda bostäderna och börja om?')){state=freshState();save();bindLoanValues();buildEditors();renderAll();setTab(0);}});
+  $('#btnReset').addEventListener('click',function(){if(confirm('Rensa båda bostäderna och börja om?')){state=freshState();save();bindLoanValues();build();renderAll();}});
   $('#btnExport').addEventListener('click',function(){
     var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');
     a.href=URL.createObjectURL(blob);a.download='husmyran-jamforelse.json';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);
@@ -1140,16 +1181,17 @@ function bindGlobal(){
   $('#fileImport').addEventListener('change',function(e){
     var f=e.target.files[0];if(!f)return;var rd=new FileReader();
     rd.onload=function(){try{var s=JSON.parse(rd.result);if(!s.houses||s.houses.length!==2)throw 0;
-      localStorage.setItem(STORE_KEY,JSON.stringify(s));state=load()||s;save();bindLoanValues();buildEditors();renderAll();}
+      localStorage.setItem(STORE_KEY,JSON.stringify(s));state=load()||s;save();bindLoanValues();build();renderAll();}
       catch(err){alert('Filen kunde inte läsas.')}};
     rd.readAsText(f);e.target.value='';
   });
 }
 function bindLoanValues(){$('#rate').value=fmtNum(state.loan.rate,2);$('#downPct').value=fmtNum(state.loan.downPct,2);$('#deduction').checked=!!state.loan.deduction}
+// på mobil visas en bostad i taget i sektionerna
 function setTab(i){
   state.tab=i;save();
   $$('#tabs button').forEach(function(b){b.classList.toggle('on',+b.dataset.i===i)});
-  $$('.editor').forEach(function(e){e.classList.toggle('active',+e.dataset.i===i)});
+  $$('#sections .col').forEach(function(c){c.classList.toggle('active',+c.dataset.h===i)});
 }
 
 function checkHashImport(){
@@ -1161,13 +1203,13 @@ function checkHashImport(){
   $('#imText').textContent=pre.ok?((pre.address||(d.text?'Uppgifter från mäklarsidan':'Bostaden'))+(pre.price?' · '+kr(pre.price):'')):'Hittade inga bostadsuppgifter på sidan.';
   md.classList.add('show');
   $$('#importModal [data-to]').forEach(function(b){b.hidden=!pre.ok&&+b.dataset.to>=0;
-    b.onclick=function(){md.classList.remove('show');var to=+b.dataset.to;if(to>=0){setTab(to);var r=applyImport(to,d);showMsg(to,'ok',importSummary(r))}}});
+    b.onclick=function(){md.classList.remove('show');var to=+b.dataset.to;if(to>=0){setTab(to);showMsg(to,'ok',importSummary(applyImport(to,d)))}}});
 }
 
 /* ---------- Start ---------- */
 bindGlobal();
-buildEditors();
-setTab(state.tab||0);
+bindApp();
+build();
 initMap();
 renderAll();
 checkHashImport();
