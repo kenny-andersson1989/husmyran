@@ -668,7 +668,7 @@ function fMoney(key,label,hint,cls){
     '<span class="per-tg" role="group" aria-label="Period"><button type="button" data-per="'+key+'" data-v="mån" title="kr per månad">mån</button><button type="button" data-per="'+key+'" data-v="år" title="kr per år">år</button></span></div>'+
     (hint?'<span class="hint">'+hint+'</span>':'')+'</div>';
 }
-function fText(key,label,cls,ph){return '<div class="field '+(cls||'')+'"><label>'+label+'</label><input data-f="'+key+'" placeholder="'+esc(ph||'')+'"></div>'}
+function fText(key,label,cls,ph,hint){return '<div class="field '+(cls||'')+'"><label>'+label+'</label><input data-f="'+key+'" placeholder="'+esc(ph||'')+'">'+(hint?'<span class="hint">'+hint+'</span>':'')+'</div>'}
 
 /* ---------- Huvudkort och sektioner ---------- */
 function headHTML(i){
@@ -712,13 +712,12 @@ var SECTIONS=[
   {id:'loan',title:'💰 Boendekostnad, lån och drift',open:true,body:function(i){return '<div class="g2">'+
     '<div class="subhead" style="margin-top:0">Pris och lån</div>'+
     '<div class="field full"><label data-o="priceLabel">Pris</label><div class="unit"><input data-f="price" data-num inputmode="decimal"><span>kr</span></div></div>'+
-    fNum('rent','Avgift / hyra','kr/mån')+
     fMoney('propertyFee','Fastighetsavgift','<span data-o="feeHint"></span>')+
     // lika många fält för nuvarande bostad och annonsbostad så att raderna hamnar i jämnhöjd
     '<div data-show="current" style="display:contents">'+
       fNum('existingLoan','Nuvarande lån','kr','Det du har kvar att betala')+
-      fText('lender','Bank / långivare','','T.ex. SBAB')+
-      fText('rateFixedUntil','Räntan bunden till','','T.ex. 2027-03 eller rörlig')+'</div>'+
+      fText('lender','Bank / långivare','','T.ex. SBAB','Där lånet ligger i dag')+
+      fText('rateFixedUntil','Räntan bunden till','','T.ex. 2027-03 eller rörlig','När räntan kan ändras')+'</div>'+
     '<div data-show="listing" style="display:contents">'+
       '<div class="field"><label>Kontantinsats</label><div class="unit"><input data-f="down" data-num inputmode="decimal"><span>kr</span></div><span class="hint" data-o="downHint"></span></div>'+
       fNum('extraDown','Extra kontantinsats','kr','Utöver kontantinsatsen')+
@@ -729,7 +728,8 @@ var SECTIONS=[
     '<div class="field" data-am="pct"><label>Amortering</label><div class="unit"><input data-f="amortPct" data-num inputmode="decimal"><span>% /år</span></div></div>'+
     '<div class="field" data-am="kr"><label>Amortering</label><div class="unit"><input data-f="amortKr" data-num inputmode="decimal"><span>kr/mån</span></div></div>'+
     '<div class="full amort-info" data-o="amortInfo"></div>'+
-    '<div class="subhead">Driftkostnad – välj om beloppet är per månad eller per år</div>'+
+    '<div class="subhead">Löpande boendekostnader – välj om beloppet är per månad eller per år</div>'+
+    fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra')+
     DRIFT_ITEMS.map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
     '<div class="field"><label>Elförbrukning</label><div class="unit"><input data-f="kwh" data-num inputmode="decimal"><span>kWh/år</span></div><span class="hint" data-o="kwhHint"></span></div>'+
     fNum('household','Antal i hushållet','pers','Hur många som bor där')+
