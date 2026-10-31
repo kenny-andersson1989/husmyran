@@ -639,7 +639,7 @@ var SECTIONS=[
     '<div data-show="listing" style="display:contents">'+
       '<div class="field"><label>Kontantinsats</label><div class="unit"><input data-f="down" data-num inputmode="decimal"><span>kr</span></div><span class="hint" data-o="downHint"></span></div>'+
       fNum('extraDown','Extra kontantinsats','kr','Utöver kontantinsatsen')+
-      fNum('pantbrev','Befintliga pantbrev','kr','Sänker kostnaden för nya pantbrev')+
+      fNum('pantbrev','Befintliga pantbrev','kr','Redan uttagna på huset')+
     '</div>'+
     fNum('rate','Effektiv ränta','%','Inkl. avgifter, före ränteavdrag')+
     '<div class="field"><span class="lbl">Ränteavdrag</span><label class="toggle" style="padding:6px 0"><input type="checkbox" data-f="deduction"><span class="sw"></span><span>Dra av 30 %</span></label></div>'+
@@ -834,7 +834,7 @@ function renderOutputs(i){
     row('Månadskostnad',c.has?kr(c.total):'–','tot')+
     row('Engångskostnader vid köp','','gap')+
     row('Lagfart (1,5 % + 825 kr)',h.current?'–':(c.lagfart?kr(c.lagfart):(h.tenure==='Äganderätt'?'–':'Ingen vid bostadsrätt')))+
-    row('Pantbrev (2 % + 375 kr)',h.current?'–':(c.pantbrev?kr(c.pantbrev):(h.tenure==='Äganderätt'?(c.price?'Inga nya behövs':'–'):'Ingen vid bostadsrätt')))+
+    row('Pantbrev (2 % av lånet utöver befintliga pantbrev + 375 kr)',h.current?'–':(c.pantbrev?kr(c.pantbrev):(h.tenure==='Äganderätt'?(c.price?'Inga nya behövs':'–'):'Ingen vid bostadsrätt')))+
     row('Kontanter som behövs',h.current?'–':(c.price?kr(c.cash):'–'),'tot');
   hq(i,'[data-o="calc"]').innerHTML=html;
   hq(i,'[data-o="extraFeat"]').innerHTML=h.extraFeatures.map(function(f,n){return '<span class="tag-x">'+esc(f)+'<button type="button" data-act="rmFeat" data-n="'+n+'" aria-label="Ta bort">×</button></span>'}).join('');
@@ -1027,7 +1027,7 @@ function renderCompare(A,B,ca,cb){
     r('Kontantinsats',null,null,cur(A)?'–':kr(ca.down)+pc(ca),cur(B)?'–':kr(cb.down)+pc(cb),0);
     if(ca.extra||cb.extra)r('Extra kontantinsats',null,null,dash(A,ca.extra),dash(B,cb.extra),0);
     r('Lagfart',cur(A)?null:ca.lagfart,cur(B)?null:cb.lagfart,dash(A,ca.lagfart),dash(B,cb.lagfart),-1,'','1,5 % av priset + 825 kr');
-    r('Pantbrev',cur(A)?null:ca.pantbrev,cur(B)?null:cb.pantbrev,dash(A,ca.pantbrev),dash(B,cb.pantbrev),-1,'','2 % av nya pantbrev + 375 kr');
+    r('Pantbrev',cur(A)?null:ca.pantbrev,cur(B)?null:cb.pantbrev,dash(A,ca.pantbrev),dash(B,cb.pantbrev),-1,'','2 % av lånet utöver befintliga pantbrev + 375 kr');
     r('Kontanter som behövs',ca.cash,cb.cash,cur(A)?'–':kr(ca.cash),cur(B)?'–':kr(cb.cash),-1,'total','insats + lagfart + pantbrev');
   }
 
