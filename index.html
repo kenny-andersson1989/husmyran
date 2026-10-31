@@ -313,20 +313,26 @@ function newHouse(current){
   return {current:!!current,url:'',address:'',area:'',type:'Villa',tenure:'Äganderätt',price:null,
     living:null,extraArea:null,plot:null,rooms:null,bedrooms:null,year:null,floor:'',heating:'',heatingNote:'',energyClass:'',
     rent:null,drift:null,driftItems:{},kwh:null,household:null,costs:{},per:{},
-    propertyFee:null,extraDown:null,existingLoan:null,rateFixedUntil:'',rateOverride:null,amortMode:'auto',amortPct:null,pantbrev:null,
+    propertyFee:null,downPct:15,extraDown:null,existingLoan:null,rateFixedUntil:'',lender:'',rate:3,deduction:false,amortMode:'auto',amortPct:null,pantbrev:null,
     building:{},features:{},extraFeatures:[],lat:null,lon:null,near:{},nearNames:{},notes:'',image:'',booliInfo:[]};
 }
-function freshState(){return {loan:{rate:3,downPct:15,deduction:false},houses:[newHouse(true),newHouse(false)],tab:0,open:{}}}
+function freshState(){return {houses:[newHouse(true),newHouse(false)],tab:0,open:{}}}
 var state = load() || freshState();
 
 function load(){
   try{var s=JSON.parse(localStorage.getItem(STORE_KEY)); if(s&&s.houses&&s.houses.length===2){
+    var L=s.loan||{};
     s.houses=s.houses.map(function(h,i){
       var n=Object.assign(newHouse(false),h);
       if(h.current===undefined)n.current=i===0&&!h.url;
       if(h.other!=null&&n.costs.other==null)n.costs.other=h.other;
-      delete n.other;delete n.estimate;
+      // tidigare gemensamma lånevillkor flyttas in i varje bostad
+      if(h.rate===undefined)n.rate=h.rateOverride!=null?h.rateOverride:(L.rate!=null?L.rate:3);
+      if(h.downPct===undefined&&L.downPct!=null)n.downPct=L.downPct;
+      if(h.deduction===undefined)n.deduction=!!L.deduction;
+      delete n.other;delete n.estimate;delete n.rateOverride;delete n.name;
       return n;});
+    delete s.loan;
     s.open=s.open||{};
     return s;}}catch(e){}
   return null;
@@ -361,12 +367,11 @@ function sumMonthly(h,prefix,list){var s=0,any=false;list.forEach(function(x){va
 function driftItemsMonthly(h){return sumMonthly(h,'driftItems.',DRIFT_ITEMS)}
 function driftMonthly(h){var m=driftItemsMonthly(h);return m!=null?m:monthly(h,'drift')}
 function calc(h){
-  var L=state.loan, price=h.price||0;
-  var rate=h.rateOverride!=null?h.rateOverride:(L.rate||0);
+  var price=h.price||0, rate=h.rate||0;
   var down=0,extra=0,loan;
   if(h.current){loan=h.existingLoan||0}
   else{
-    down=price*(L.downPct||0)/100;
+    down=price*(h.downPct||0)/100;
     extra=Math.min(h.extraDown||0, Math.max(0,price-down));
     loan=Math.max(0,price-down-extra);
   }
@@ -375,7 +380,7 @@ function calc(h){
   var amortPct=h.amortMode==='manual'&&h.amortPct!=null?h.amortPct:autoAmort;
   var interestYear=loan*rate/100;
   var deductYear=Math.min(interestYear,100000)*0.30+Math.max(0,interestYear-100000)*0.21;
-  var interest=interestYear/12, deduct=L.deduction?deductYear/12:0, amort=loan*amortPct/100/12;
+  var interest=interestYear/12, deduct=h.deduction?deductYear/12:0, amort=loan*amortPct/100/12;
   var owned=h.tenure==='Äganderätt'&&h.type!=='Tomt/Mark';
   var autoFee=owned?Math.min(price*0.75*0.0075,PROPERTY_FEE_CAP):0;
   var fee=h.propertyFee!=null?monthly(h,'propertyFee'):autoFee/12;
@@ -607,37 +612,35 @@ var SECTIONS=[
     '<div class="field"><label>Uppvärmning</label><select data-f="heating">'+opt(HEATING)+'</select></div>'+
     fText('heatingNote','Uppvärmning – detaljer','','T.ex. golvvärme nedre plan')+
     '</div>'}},
-  {id:'loan',title:'💰 Boendekostnad och lån',open:true,
-   // lånevillkor som gäller båda bostäderna
-   shared:function(){return '<h3>Lånevillkor för båda</h3><div class="loan-grid">'+
-     '<div class="field"><label for="rate">Ränta</label><div class="unit"><input id="rate" inputmode="decimal"><span>%</span></div></div>'+
-     '<div class="field"><label for="downPct">Kontantinsats (krav)</label><div class="unit"><input id="downPct" inputmode="decimal"><span>%</span></div></div>'+
-     '<div class="field"><span class="lbl">Ränteavdrag</span><label class="toggle"><input type="checkbox" id="deduction"><span class="sw"></span><span>Dra av (30 %)</span></label></div>'+
-     '</div><p class="hint" style="margin:8px 0 0">Räntan räknas före ränteavdrag. Slår du på ränteavdraget dras 30 % av räntekostnaden av (21 % på räntor över 100 000 kr/år). '+
-     'Amorteringen följer amorteringskravet automatiskt. Egen ränta och amortering kan anges per bostad nedan.</p>'},
-   body:function(i){return '<div class="g2">'+
+  // pris, lån, drift och övriga kostnader i en sektion; varje bostad har egna lånevillkor
+  {id:'loan',title:'💰 Boendekostnad, lån och drift',open:true,body:function(i){return '<div class="g2">'+
+    '<div class="subhead" style="margin-top:0">Pris och lån</div>'+
     '<div class="field full"><label data-o="priceLabel">Pris</label><div class="unit"><input data-f="price" data-num inputmode="decimal"><span>kr</span></div></div>'+
     fNum('rent','Avgift / hyra','kr/mån')+
     fMoney('propertyFee','Fastighetsavgift')+
-    '<div data-show="current" style="display:contents">'+fNum('existingLoan','Nuvarande lån','kr','Det du har kvar att betala')+
+    // lika många fält för nuvarande bostad och annonsbostad så att raderna hamnar i jämnhöjd
+    '<div data-show="current" style="display:contents">'+
+      fNum('existingLoan','Nuvarande lån','kr','Det du har kvar att betala')+
+      fText('lender','Bank / långivare','','T.ex. SBAB')+
       fText('rateFixedUntil','Räntan bunden till','','T.ex. 2027-03 eller rörlig')+'</div>'+
     '<div data-show="listing" style="display:contents">'+
-      fNum('extraDown','Extra kontantinsats','kr','Utöver kravet på kontantinsats')+
+      fNum('downPct','Kontantinsats','%','Krav på minst 10–15 % av priset')+
+      fNum('extraDown','Extra kontantinsats','kr','Utöver kontantinsatsen')+
       fNum('pantbrev','Befintliga pantbrev','kr','Sänker kostnaden för nya pantbrev')+
     '</div>'+
-    fNum('rateOverride','Egen ränta','%','Tomt = samma som ovan')+
+    fNum('rate','Ränta','%','Före ränteavdrag')+
+    '<div class="field"><span class="lbl">Ränteavdrag</span><label class="toggle" style="padding:6px 0"><input type="checkbox" data-f="deduction"><span class="sw"></span><span>Dra av 30 %</span></label></div>'+
     '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå</option></select></div>'+
-    fNum('amortPct','Amortering','% /år','','full')+
-    '</div><div class="calc-list" data-o="calc"></div>'}},
-  {id:'drift',title:'⚡ Driftkostnad och övriga kostnader',body:function(i){return '<div class="g2">'+
-    '<div class="subhead" style="margin-top:0">Driftkostnad – välj om beloppet är per månad eller per år</div>'+
+    fNum('amortPct','Amortering','% /år')+
+    '<div class="subhead">Driftkostnad – välj om beloppet är per månad eller per år</div>'+
     fMoney('drift','Driftkostnad totalt','Används om du inte fyller i delarna nedan','full')+
     DRIFT_ITEMS.map(function(x){return fMoney('driftItems.'+x[0],x[1])}).join('')+
     '<div class="sumline" data-o="driftSum"></div>'+
     fNum('kwh','Elförbrukning','kWh/år')+fNum('household','Antal i hushållet','pers')+
     '<div class="subhead">Övriga kostnader</div>'+
     COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
-    '<div class="sumline" data-o="costSum"></div></div>'}},
+    '<div class="sumline" data-o="costSum"></div>'+
+    '<div class="subhead">Summering</div></div><div class="calc-list" data-o="calc"></div>'}},
   {id:'building',title:'🧱 Byggnad',body:function(i){return '<div class="g2">'+BUILDING.map(function(x){return fText('building.'+x[0],x[1])}).join('')+'</div>'}},
   {id:'features',title:'✨ Egenskaper',body:function(i){return '<div class="chips">'+
     FEATURES.map(function(f){return '<label class="chip"><input type="checkbox" data-feat="'+f[0]+'"><span>'+f[1]+'</span></label>'}).join('')+
@@ -663,7 +666,6 @@ function build(){
       '</div></details>';
   }).join('');
   $$('#sections details.sec').forEach(function(d){d.addEventListener('toggle',function(){state.open[d.dataset.sec]=d.open;save()})});
-  bindLoan();
   [0,1].forEach(renderHouse);
   setTab(state.tab||0);
 }
@@ -689,7 +691,8 @@ function bindApp(){
   app.addEventListener('change',function(e){
     var i=houseOf(e);if(i==null)return;var t=e.target,h=state.houses[i];
     if(t.dataset.feat){h.features[t.dataset.feat]=t.checked;save();renderAll();}
-    if(t.dataset.f==='current'){h.current=t.checked;save();renderHouse(i);renderAll();}
+    if(t.dataset.f&&t.type==='checkbox'){setPath(h,t.dataset.f,t.checked);save();
+      if(t.dataset.f==='current')renderHouse(i);else renderOutputs(i);renderAll();}
     if(t.dataset.f==='amortMode')renderOutputs(i);
   });
   app.addEventListener('focusout',function(e){
@@ -804,10 +807,10 @@ function renderOutputs(i){
     html=row('Bostadens värde',c.price?kr(c.price):'–')+
       (h.existingLoan==null?row('Lån','Fyll i ditt nuvarande lån'):row('Lån'+(c.price?' ('+fmtNum(c.ltv*100,1)+' % belåning)':''),kr(c.loan)));
   }else{
-    html=row('Kontantinsats '+fmtNum(state.loan.downPct,1)+' %'+(c.extra?' + extra':''),c.price?kr(c.down+c.extra):'Fyll i pris')+
+    html=row('Kontantinsats '+fmtNum(h.downPct,1)+' %'+(c.extra?' + extra':''),c.price?kr(c.down+c.extra):'Fyll i pris')+
       row('Lån'+(c.price?' ('+fmtNum(c.ltv*100,1)+' % belåning)':''),c.price?kr(c.loan):'–');
   }
-  html+=row('Ränta '+fmtNum(c.rate,2)+' %',m(c.interest))+(state.loan.deduction?row('Ränteavdrag',c.deduct?'−'+m(c.deduct):'–'):'')+
+  html+=row('Ränta '+fmtNum(c.rate,2)+' %',m(c.interest))+row('Ränteavdrag',h.deduction?(c.deduct?'−'+m(c.deduct):'–'):'Ej avdraget')+
     row('Amortering '+fmtNum(c.amortPct,1)+' %',m(c.amort))+row('Avgift',m(c.rent))+row('Driftkostnad',m(c.drift))+
     row('Fastighetsavgift',m(c.fee))+row('Övriga kostnader',m(c.costs))+
     row('Månadskostnad',c.has?kr(c.total):'–','tot')+
@@ -989,20 +992,20 @@ function renderCompare(A,B,ca,cb){
   r('Lånebelopp',ca.loan,cb.loan,kr(ca.loan)+(ca.price?'<br><small>'+fmtNum(ca.ltv*100,1)+' % belåning</small>':''),kr(cb.loan)+(cb.price?'<br><small>'+fmtNum(cb.ltv*100,1)+' % belåning</small>':''),-1);
   rk('Ränta',ca.interest,cb.interest,-1,'',fmtNum(ca.rate,2)+' % / '+fmtNum(cb.rate,2)+' %');
   txt('Räntan bunden till',A.current?A.rateFixedUntil:'',B.current?B.rateFixedUntil:'');
-  if(state.loan.deduction)r('Ränteavdrag',null,null,'−'+kr(ca.deduct),'−'+kr(cb.deduct),0);
+  if(A.deduction||B.deduction)r('Ränteavdrag',null,null,A.deduction?'−'+kr(ca.deduct):'Ej avdraget',B.deduction?'−'+kr(cb.deduct):'Ej avdraget',0);
   r('Amortering',ca.amort,cb.amort,kr(ca.amort)+'<br><small>'+fmtNum(ca.amortPct,1)+' %/år</small>',kr(cb.amort)+'<br><small>'+fmtNum(cb.amortPct,1)+' %/år</small>',-1);
   if(any(A.rent,B.rent))rk('Avgift / hyra',A.rent,B.rent,-1);
   var dA=driftMonthly(A),dB=driftMonthly(B);
   if(any(dA,dB))rm('Driftkostnad',dA,dB,-1);
   rk('Fastighetsavgift',ca.fee,cb.fee,-1);
   COSTS.forEach(function(x){var a=monthly(A,'costs.'+x[0]),b=monthly(B,'costs.'+x[0]);if(any(a,b))rm(x[1],a,b,-1)});
-  rk('Månadskostnad',ca.has?ca.total:null,cb.has?cb.total:null,-1,'total',state.loan.deduction?'efter ränteavdrag':'före ränteavdrag');
+  rk('Månadskostnad',ca.has?ca.total:null,cb.has?cb.total:null,-1,'total',A.deduction===B.deduction?(A.deduction?'efter ränteavdrag':'före ränteavdrag'):'A '+(A.deduction?'efter':'före')+', B '+(B.deduction?'efter':'före')+' ränteavdrag');
   rk('Månadskostnad utan amortering',ca.has?ca.totalExAmort:null,cb.has?cb.totalExAmort:null,-1,'','amorteringen är ett sparande');
 
   if(!cur(A)||!cur(B)){
     sec('Vid köp (engångskostnader)');
     var dash=function(h,v){return h.current?'–':kr(v)};
-    r('Kontantinsats '+fmtNum(state.loan.downPct,1)+' %',null,null,dash(A,ca.down),dash(B,cb.down),0);
+    r('Kontantinsats',null,null,cur(A)?'–':kr(ca.down)+'<br><small>'+fmtNum(A.downPct,1)+' %</small>',cur(B)?'–':kr(cb.down)+'<br><small>'+fmtNum(B.downPct,1)+' %</small>',0);
     if(ca.extra||cb.extra)r('Extra kontantinsats',null,null,dash(A,ca.extra),dash(B,cb.extra),0);
     r('Lagfart',cur(A)?null:ca.lagfart,cur(B)?null:cb.lagfart,dash(A,ca.lagfart),dash(B,cb.lagfart),-1,'','1,5 % av priset + 825 kr');
     r('Pantbrev',cur(A)?null:ca.pantbrev,cur(B)?null:cb.pantbrev,dash(A,ca.pantbrev),dash(B,cb.pantbrev),-1,'','2 % av nya pantbrev + 375 kr');
@@ -1196,15 +1199,6 @@ function updateMap(){
 }
 
 /* ---------- Övrigt UI ---------- */
-// lånevillkoren skapas med sektionerna, så de kopplas om varje gång de byggs
-function bindLoan(){
-  ['rate','downPct'].forEach(function(id){var el=$('#'+id);
-    el.addEventListener('input',function(){state.loan[id]=num(el.value)||0;save();renderAll();[0,1].forEach(renderOutputs)});
-    el.addEventListener('blur',function(){el.value=fmtNum(state.loan[id],2)});});
-  var dd=$('#deduction');
-  dd.addEventListener('change',function(){state.loan.deduction=dd.checked;save();renderAll();[0,1].forEach(renderOutputs)});
-  bindLoanValues();
-}
 function bindGlobal(){
   $$('#tabs button').forEach(function(b){b.addEventListener('click',function(){setTab(+b.dataset.i)})});
   var code=bookmarkletCode();$('#bmLink').href=code;
@@ -1214,7 +1208,7 @@ function bindGlobal(){
     var done=function(){alert('Bokmärkeskoden är kopierad.')};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).then(done,function(){prompt('Kopiera koden:',code)});else prompt('Kopiera koden:',code);
   });
-  $('#btnReset').addEventListener('click',function(){if(confirm('Rensa båda bostäderna och börja om?')){state=freshState();save();bindLoanValues();build();renderAll();}});
+  $('#btnReset').addEventListener('click',function(){if(confirm('Rensa båda bostäderna och börja om?')){state=freshState();save();build();renderAll();}});
   $('#btnExport').addEventListener('click',function(){
     var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');
     a.href=URL.createObjectURL(blob);a.download='husmyran-jamforelse.json';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);
@@ -1222,12 +1216,11 @@ function bindGlobal(){
   $('#fileImport').addEventListener('change',function(e){
     var f=e.target.files[0];if(!f)return;var rd=new FileReader();
     rd.onload=function(){try{var s=JSON.parse(rd.result);if(!s.houses||s.houses.length!==2)throw 0;
-      localStorage.setItem(STORE_KEY,JSON.stringify(s));state=load()||s;save();bindLoanValues();build();renderAll();}
+      localStorage.setItem(STORE_KEY,JSON.stringify(s));state=load()||s;save();build();renderAll();}
       catch(err){alert('Filen kunde inte läsas.')}};
     rd.readAsText(f);e.target.value='';
   });
 }
-function bindLoanValues(){$('#rate').value=fmtNum(state.loan.rate,2);$('#downPct').value=fmtNum(state.loan.downPct,2);$('#deduction').checked=!!state.loan.deduction}
 // på mobil visas en bostad i taget i sektionerna
 function setTab(i){
   state.tab=i;save();
