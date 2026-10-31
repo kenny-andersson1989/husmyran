@@ -156,11 +156,17 @@ details.sec>summary:hover{background:#fafcfd;border-radius:var(--radius)}
 .near-status{font-size:13px;color:var(--muted);margin:0 0 10px;min-height:20px}
 
 /* Jämförelse */
-.cmp-wrap{padding:0;overflow:hidden}
+/* overflow:clip i stället för hidden så att tabellhuvudet kan stå kvar när man scrollar */
+.cmp-wrap{padding:0;overflow:clip}
+.diff-sum{padding:14px 18px;border-top:1px solid var(--line);background:#fafcfd}
+.diff-sum h3{margin:0 0 6px}
+.diff-sum ul{margin:0;padding-left:20px}
+.diff-sum li{margin:3px 0}
+.diff-sum .a-c{color:var(--a);font-weight:800}.diff-sum .b-c{color:var(--b);font-weight:800}
 table.cmp{width:100%;border-collapse:collapse;font-size:14.5px;table-layout:fixed}
 table.cmp col.c1{width:38%}
 table.cmp th,table.cmp td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:break-word}
-table.cmp thead th{background:#fff;font-weight:800;border-bottom:2px solid var(--line)}
+table.cmp thead th{background:#fff;font-weight:800;border-bottom:2px solid var(--line);position:sticky;top:0;z-index:3;box-shadow:0 2px 0 var(--line)}
 table.cmp thead th.ha{color:var(--a)} table.cmp thead th.hb{color:var(--b)}
 table.cmp td.v{font-variant-numeric:tabular-nums;font-weight:600}
 table.cmp tr.sec td{background:#f3f7fa;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding-top:12px}
@@ -183,8 +189,27 @@ table.cmp td.lab small{display:block}
 .pin-mini{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#fff;font-size:10px;font-weight:800}
 .zoom-btns{display:flex;gap:6px;flex-wrap:wrap}
 
+.howto{background:#f3f7fa;border-radius:12px;padding:10px 14px}
+.howto>summary{cursor:pointer;font-weight:800}
+.howto p{margin:8px 0}
+.howto h3{margin:10px 0 4px}
 .howto ol{margin:6px 0 0;padding-left:20px}
 .howto li{margin:4px 0}
+
+/* utskrift / PDF: bostäderna, jämförelsen och kartan */
+@media print{
+  body{background:#fff;font-size:12px}
+  header.top .top-actions,#sections,#tabs,.zoom-btns,.legend input,footer .no-print{display:none!important}
+  .card{box-shadow:none;break-inside:avoid}
+  section{margin-bottom:12px}
+  #cmpSec>summary::after{display:none}
+  table.cmp{font-size:11.5px}
+  table.cmp th,table.cmp td{padding:4px 8px}
+  table.cmp thead th{position:static}
+  #map{height:300px}
+  .print-only{display:block!important}
+}
+.print-only{display:none}
 .bm-link{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:var(--brand);color:#fff;font-weight:800;text-decoration:none;cursor:grab}
 
 .modal{position:fixed;inset:0;background:rgba(36,56,74,.35);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
@@ -248,6 +273,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
       <label class="btn small" for="fileImport">⬆ Öppna fil</label>
       <input type="file" id="fileImport" accept="application/json,.json" hidden>
       <button class="btn small" id="btnShare" type="button">🔗 Dela länk</button>
+      <button class="btn small" id="btnPrint" type="button">🖨️ Skriv ut / PDF</button>
       <button class="btn small" id="btnReset" type="button">↺ Börja om</button>
     </div>
   </div>
@@ -285,26 +311,11 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
   <section>
     <details class="card sec" id="cmpSec" open style="margin-top:0">
       <summary>📊 Jämförelse <small style="font-size:13px;font-weight:600;color:var(--muted)">– grönt markerar det bättre värdet</small></summary>
+      <div class="diff-sum" id="diffSum"></div>
       <div class="cmp-wrap" style="border-top:1px solid var(--line)"><table class="cmp" id="cmp"></table></div>
     </details>
   </section>
 
-  <section class="card howto">
-    <h2>Hämta uppgifter från en annons</h2>
-    <p style="margin-top:0">Booli och mäklarnas sidor låter inte andra webbsidor läsa annonserna direkt. Därför finns en <b>Husmyran-knapp</b> som du lägger bland dina bokmärken och klickar på när du är inne på annonsen. Den fungerar både på booli.se och på mäklarens egen sida, där detaljer som driftkostnadens delar, energiklass och byggnadssätt ofta finns.</p>
-    <h3>Dator</h3>
-    <ol>
-      <li>Dra knappen <a class="bm-link" id="bmLink" href="#" title="Dra mig till bokmärkesfältet">🐜 Till Husmyran</a> upp till webbläsarens bokmärkesfält (visa fältet med Ctrl+Shift+B).</li>
-      <li>Öppna annonsen på booli.se eller hos mäklaren och klicka på bokmärket <b>Till Husmyran</b>. På mäklarsidan: fäll först ut ”Visa mer” så att all text syns.</li>
-      <li id="bmStep3">Uppgifterna kopieras. Klistra sedan in dem i rutan <b>”Klistra in här”</b> under Bostad A eller B.</li>
-    </ol>
-    <h3>Mobil</h3>
-    <ol>
-      <li><button class="btn small" id="btnCopyBm" type="button">Kopiera bokmärkeskoden</button> och spara ett nytt bokmärke med namnet <b>Husmyran</b> där koden klistras in som adress.</li>
-      <li>Öppna annonsen, skriv <b>Husmyran</b> i adressfältet och välj bokmärket.</li>
-      <li>Utan bokmärke: markera all text i annonsen, kopiera och klistra in den. Sidan försöker då läsa ut så mycket som möjligt.</li>
-    </ol>
-  </section>
 </main>
 
 <footer>Husmyran sparar allt i din egen webbläsare. Beräkningarna är uppskattningar – stäm av med din bank.<br>Kartdata © OpenStreetMap-bidragsgivare. Adressökning via Photon.</footer>
@@ -433,6 +444,8 @@ function sumMonthly(h,prefix,list){var s=0,any=false;list.forEach(function(x){va
 /* ---------- Kalkyl ---------- */
 function driftItemsMonthly(h){return sumMonthly(h,'driftItems.',DRIFT_ITEMS)}
 function driftMonthly(h){return driftItemsMonthly(h)}
+// boendekostnad över ett antal år (dagens nivåer), exklusive amortering men inklusive engångskostnader vid köp
+function overTime(c,years){return c.totalExAmort*12*years+(c.cash!=null?c.lagfart+c.pantbrev:0)}
 function calc(h){
   var price=h.price||0, rate=h.rate||0;
   var down=0,extra=0,loan;
@@ -682,7 +695,19 @@ function headHTML(i){
 
 // Varje sektion har ett innehåll per bostad; båda visas sida vid sida i samma utfällbara kort
 var SECTIONS=[
-  {id:'import',title:'📋 Hämta från annons',body:function(i){return ''+
+  {id:'import',title:'📋 Hämta från annons',
+   // instruktionen för Husmyran-bokmärket ligger där den används
+   shared:function(){return '<details class="howto"><summary>🐜 Så hämtar du uppgifter med Husmyran-knappen</summary>'+
+     '<p>Booli och mäklarnas sidor låter inte andra webbsidor läsa annonserna direkt. Därför finns en <b>Husmyran-knapp</b> som du lägger bland dina bokmärken och klickar på när du är inne på annonsen – på booli.se eller på mäklarens egen sida, där t.ex. driftkostnadens delar, energiklass och byggnadssätt ofta finns.</p>'+
+     '<h3>Dator</h3><ol>'+
+     '<li>Dra knappen <a class="bm-link" id="bmLink" href="#" title="Dra mig till bokmärkesfältet">🐜 Till Husmyran</a> upp till webbläsarens bokmärkesfält (visa fältet med Ctrl+Shift+B).</li>'+
+     '<li>Öppna annonsen och klicka på bokmärket <b>Till Husmyran</b>. På mäklarsidan: fäll först ut ”Visa mer” så att all text syns.</li>'+
+     '<li id="bmStep3">Uppgifterna kopieras. Klistra sedan in dem i rutan <b>”Klistra in här”</b> nedan.</li></ol>'+
+     '<h3>Mobil</h3><ol>'+
+     '<li><button class="btn small" id="btnCopyBm" type="button">Kopiera bokmärkeskoden</button> och spara ett nytt bokmärke med namnet <b>Husmyran</b> där koden klistras in som adress.</li>'+
+     '<li>Öppna annonsen, skriv <b>Husmyran</b> i adressfältet och välj bokmärket.</li>'+
+     '<li>Utan bokmärke: markera all text i annonsen, kopiera och klistra in den nedan.</li></ol></details>'},
+   body:function(i){return ''+
     '<div data-show="current"><span class="hint">Det här är din nuvarande bostad, så ingen annons behövs. Slå av ”nuvarande bostad” under Bostaden om du vill hämta från en annons.</span></div>'+
     '<div class="import-box" data-show="listing">'+
       '<div class="field"><label>Länk till annonsen</label><input data-f="url" placeholder="https://www.booli.se/annons/…" inputmode="url"></div>'+
@@ -768,7 +793,14 @@ var SECTIONS=[
     '<div class="field"><textarea data-f="notes" rows="4" placeholder="Känsla från visningen, renoveringsbehov, frågor till mäklaren…"></textarea></div>'+
     '<div style="margin-top:12px"><button class="btn small" type="button" data-act="clear">Töm bostad '+letter(i)+'</button></div>'}},
   // sist, så att kartan kommer direkt efter
-  {id:'near',title:'🌲 Närhet',body:function(i){return ''+
+  {id:'near',title:'🌲 Närhet och restid',
+   // en gemensam målpunkt (jobb, skola …) som båda bostäderna mäts mot
+   shared:function(){return '<div class="g2" style="align-items:end">'+
+     '<div class="field"><label>Restid till (jobb, skola, föräldrar …)</label><input id="workAddr" autocomplete="off" placeholder="T.ex. Kungsportsavenyen 1, Göteborg"></div>'+
+     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn small" type="button" id="workGo">Räkna restid</button><span class="hint" id="workMsg"></span></div>'+
+     '</div>'},
+   body:function(i){return ''+
+    '<div class="calc-list" data-o="travel" style="margin:0 0 12px"></div>'+
     '<div class="near-status" data-o="nearStatus"></div>'+
     '<div style="margin-bottom:10px"><button class="btn small" type="button" data-act="near">Räkna ut avstånd</button></div>'+
     '<div class="g2">'+NEAR.map(function(n){return '<div class="field"><label>'+n[2]+' '+n[1]+'</label><div class="unit"><input data-near="'+n[0]+'" inputmode="numeric"><span>m</span></div><span class="hint" data-nearname="'+n[0]+'"></span></div>'}).join('')+'</div>'}}
@@ -784,6 +816,8 @@ function build(){
       '</div></details>';
   }).join('');
   $$('#sections details.sec').forEach(function(d){d.addEventListener('toggle',function(){state.open[d.dataset.sec]=d.open;save()})});
+  bindBookmarklet();
+  bindWork();
   $$('[data-g]').forEach(function(el){var v=state.g[el.dataset.g];el.value=v==null?'':(el.tagName==='SELECT'?v:fmtNum(v,2))});
   [0,1].forEach(renderHouse);
   setTab(state.tab||0);
@@ -1005,7 +1039,23 @@ function renderOutputs(i){
     (inc?row('Kvar att leva på',c.has?kr(c.left)+'/mån':'–','tot')+
          row('Kvar vid högre ränta',c.has?kr(c.left-(c.stressTotal-c.total))+'/mån':'–')+
          row('Boendet tar av inkomsten',c.has?fmtNum(c.total/inc*100,0)+' %':'–')
-        :row('Kvar att leva på','Fyll i nettoinkomst ovan','tot'));
+        :row('Kvar att leva på','Fyll i nettoinkomst ovan','tot'))+
+    // kostnad över tid: allt utom amorteringen (som är sparande), plus engångskostnader vid köp
+    row('Över tid','','gap')+
+    row('Kostnad 5 år',c.has?kr(overTime(c,5)):'–')+
+    row('Kostnad 10 år',c.has?kr(overTime(c,10)):'–')+
+    row('Amorterat (sparat) på 10 år',c.has?kr(c.amort*120):'–');
+  // restid till målpunkten
+  var tv=h.travel,w=state.g.work,tr=hq(i,'[data-o="travel"]');
+  tr.innerHTML=!w?row('Restid','Ange en adress ovan')
+    :h.lat==null?row('Restid','Läget saknas')
+    :!tv||tv.loading?row('Restid','Räknar…')
+    :tv.error?row('Restid','Kunde inte räknas – försök igen')
+    :row('🚗 Bil',tv.car?fmtMin(tv.car.min)+' · '+fmtNum(tv.car.km,1)+' km':'–')+
+     // cykel och gång visas bara när det är rimligt avstånd
+     row('🚲 Cykel (ca 16 km/h)',tv.bike?(tv.bike.km>50?'För långt':fmtMin(tv.bike.min)+' · '+fmtNum(tv.bike.km,1)+' km'):'–')+
+     row('🚶 Gång',tv.foot?(tv.foot.km>15?'För långt':fmtMin(tv.foot.min)+' · '+fmtNum(tv.foot.km,1)+' km'):'–')+
+     '<div><span>🚆 Kollektivtrafik</span><span><a href="'+transitLink(h)+'" target="_blank" rel="noopener">Visa i Google Maps ↗</a></span></div>';
   hq(i,'[data-o="extraFeat"]').innerHTML=h.extraFeatures.map(function(f,n){return '<span class="tag-x">'+esc(f)+'<button type="button" data-act="rmFeat" data-n="'+n+'" aria-label="Ta bort">×</button></span>'}).join('');
   hq(i,'[data-o="booliInfo"]').innerHTML=(h.booliInfo||[]).length?'<li><b>Från annonsen:</b></li>'+h.booliInfo.map(function(x){return '<li>• '+esc(x)+'</li>'}).join(''):'';
   NEAR.forEach(function(n){var s=hq(i,'[data-nearname="'+n[0]+'"]');if(s)s.textContent=h.nearNames[n[0]]||''});
@@ -1171,7 +1221,33 @@ function renderAll(){
   updateMap();
 }
 
+// kort lista med de viktigaste skillnaderna, överst i jämförelsen
+function renderDiffSummary(A,B,ca,cb){
+  var nA='<span class="a-c">A</span>',nB='<span class="b-c">B</span>',out=[];
+  function who(d){return d>0?nB:nA}
+  if(ca.has&&cb.has){var d=cb.total-ca.total;if(Math.abs(d)>=1)out.push(who(-d)+' är <b>'+kr(Math.abs(d))+'</b> billigare per månad ('+kr(Math.abs(d)*12)+' per år)')}
+  if(ca.has&&cb.has){var d10=overTime(cb,10)-overTime(ca,10);if(Math.abs(d10)>=1)out.push('På 10 år skiljer det <b>'+kr(Math.abs(d10))+'</b> till '+who(-d10)+':s fördel')}
+  if(ca.price&&cb.price&&!A.current&&!B.current){var dp=cb.price-ca.price;if(dp)out.push(who(-dp)+' är <b>'+kr(Math.abs(dp))+'</b> billigare att köpa')}
+  // who(x): x>0 pekar ut B – "större hos B" = B−A, "närmare/kortare hos B" = A−B
+  if(A.living&&B.living&&A.living!==B.living)out.push(who(B.living-A.living)+' har <b>'+fmtNum(Math.abs(A.living-B.living),1)+' m²</b> större boarea');
+  if(A.rooms&&B.rooms&&A.rooms!==B.rooms)out.push(who(B.rooms-A.rooms)+' har <b>'+fmtNum(Math.abs(A.rooms-B.rooms),1)+'</b> rum fler');
+  if(A.plot&&B.plot&&Math.abs(A.plot-B.plot)>=50)out.push(who(B.plot-A.plot)+' har <b>'+fmtNum(Math.abs(A.plot-B.plot))+' m²</b> större tomt');
+  [['school','grundskolan'],['preschool','förskolan'],['grocery','matbutiken'],['transit','kollektivtrafiken'],['lake','sjön']].forEach(function(n){
+    var a=A.near[n[0]],b=B.near[n[0]];if(a==null||b==null||Math.abs(a-b)<150)return;
+    out.push(who(a-b)+' har <b>'+dist(Math.abs(a-b))+'</b> närmare till '+n[1]);
+  });
+  var tA=A.travel&&A.travel.car,tB=B.travel&&B.travel.car;
+  if(state.g.work&&tA&&tB&&Math.abs(tA.min-tB.min)>=3)out.push(who(tA.min-tB.min)+' har <b>'+Math.abs(tA.min-tB.min)+' min</b> kortare bilresa till '+esc(state.g.work.label));
+  var eA=A.energyClass?ENERGY.indexOf(A.energyClass):null,eB=B.energyClass?ENERGY.indexOf(B.energyClass):null;
+  if(eA!=null&&eB!=null&&eA!==eB)out.push(who(eA-eB)+' har bättre energiklass ('+esc(eA<eB?A.energyClass:B.energyClass)+' mot '+esc(eA<eB?B.energyClass:A.energyClass)+')');
+  var only=function(x,y){return FEATURES.filter(function(f){return x.features[f[0]]&&!y.features[f[0]]}).map(function(f){return f[1].toLowerCase()})};
+  var oa=only(A,B),ob=only(B,A);
+  if(oa.length)out.push('Bara '+nA+' har '+oa.slice(0,5).join(', '));
+  if(ob.length)out.push('Bara '+nB+' har '+ob.slice(0,5).join(', '));
+  $('#diffSum').innerHTML=out.length?'<h3>Viktigaste skillnaderna</h3><ul>'+out.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>':'<span class="hint">Fyll i båda bostäderna så visas de viktigaste skillnaderna här.</span>';
+}
 function renderCompare(A,B,ca,cb){
+  renderDiffSummary(A,B,ca,cb);
   var rows=[];
   function sec(t){rows.push('<tr class="sec"><td colspan="3">'+t+'</td></tr>')}
   // dir: -1 lägre är bättre, 1 högre är bättre, 0 ingen markering
@@ -1209,7 +1285,9 @@ function renderCompare(A,B,ca,cb){
   rk('Månadskostnad utan amortering',ca.has?ca.totalExAmort:null,cb.has?cb.totalExAmort:null,-1,'','amorteringen är ett sparande');
   rk('Om räntan stiger '+fmtNum(state.g.stress)+' %-enheter',ca.has?ca.stressTotal:null,cb.has?cb.stressTotal:null,-1,'','stresstest');
   if(state.g.income)rk('Kvar att leva på',ca.has?ca.left:null,cb.has?cb.left:null,1,'total','nettoinkomst minus boende och övriga utgifter');
-  if(ca.sale||cb.sale){var sa=ca.sale||cb.sale;r('Pengar kvar efter försäljning',null,null,ca.sale?kr(ca.sale.net):'–',cb.sale?kr(cb.sale.net):'–',0,'','nuvarande bostad')}
+  if(ca.sale||cb.sale)r('Pengar kvar efter försäljning',null,null,ca.sale?kr(ca.sale.net):'–',cb.sale?kr(cb.sale.net):'–',0,'','nuvarande bostad');
+  rk('Kostnad 5 år',ca.has?overTime(ca,5):null,cb.has?overTime(cb,5):null,-1,'','utan amortering, med köpets engångskostnader');
+  rk('Kostnad 10 år',ca.has?overTime(ca,10):null,cb.has?overTime(cb,10):null,-1);
 
   if(!cur(A)||!cur(B)){
     sec('Vid köp (engångskostnader)');
@@ -1229,6 +1307,16 @@ function renderCompare(A,B,ca,cb){
     var ya=driftItemsMonthly(A),yb=driftItemsMonthly(B);if(ya!=null||yb!=null)rm('Summa',ya,yb,-1);
     if(any(A.kwh,B.kwh))r('Elförbrukning',A.kwh,B.kwh,unit(A.kwh,'kWh/år',0),unit(B.kwh,'kWh/år',0),-1);
     if(any(A.household,B.household))r('Antal i hushållet',null,null,A.household||'–',B.household||'–',0);
+  }
+
+  if(state.g.work){
+    var maxKm={car:1e9,bike:50,foot:15};
+    var tt=function(h,m){var t=h.travel&&h.travel[m];return t&&t.km<=maxKm[m]?t.min:null};
+    var tf=function(h,m){var t=h.travel&&h.travel[m];return !t?'–':t.km>maxKm[m]?'För långt':fmtMin(t.min)+'<br><small>'+fmtNum(t.km,1)+' km</small>'};
+    sec('Restid till '+esc(state.g.work.label));
+    r('🚗 Bil',tt(A,'car'),tt(B,'car'),tf(A,'car'),tf(B,'car'),-1);
+    r('🚲 Cykel',tt(A,'bike'),tt(B,'bike'),tf(A,'bike'),tf(B,'bike'),-1);
+    r('🚶 Gång',tt(A,'foot'),tt(B,'foot'),tf(A,'foot'),tf(B,'foot'),-1);
   }
 
   sec('Bostaden');
@@ -1348,6 +1436,7 @@ function nearStatus(i,text,busy){
   var st=hq(i,'[data-o="nearStatus"]');if(!st)return;
   st.textContent=text;if(busy)st.dataset.busy='1';else delete st.dataset.busy;
 }
+var nearRun=[0,0];
 function fetchNear(i){
   var h=state.houses[i];if(h.lat==null){nearStatus(i,'Läget saknas – fyll i adressen först.');return}
   var lat=h.lat,lon=h.lon,P=lat+','+lon;
@@ -1361,12 +1450,16 @@ function fetchNear(i){
     {keys:['lake'],q:'(way'+A(3000)+'[natural=water]'+W+';relation'+A(3000)+'[natural=water]'+W+';way'+A(3000)+'[natural=water][!water];relation'+A(3000)+'[natural=water][!water];);out tags geom('+bb(3200)+');'},
     {keys:['forest'],q:'(way'+A(1500)+'[landuse=forest];way'+A(1500)+'[natural=wood];relation'+A(1500)+'[landuse=forest];relation'+A(1500)+'[natural=wood];);out tags geom('+bb(1700)+');'}
   ];
-  var failed=0,done=0,total=parts.length+1;
+  var failed=0,done=0,total=parts.length+1,approx=false;
+  // bara den senaste beräkningen för bostaden får skriva sina resultat
+  var run=nearRun[i]=(nearRun[i]||0)+1;
+  function stale(){return nearRun[i]!==run||state.houses[i].lat!==lat}
   // platser som ritas ut på kartan fylls i allteftersom svaren kommer
   h.nearPts={};h.busStops=[];
+  fetchTravel(i);
   nearStatus(i,'Räknar ut avstånd…',true);
   var places=Promise.all(PLACE_QUERIES.map(function(pq){return placeList(lat,lon,pq)})).then(function(lists){
-    if(state.houses[i].lat!==lat)return;
+    if(stale())return;
     var hh=state.houses[i];
     PLACE_QUERIES.forEach(function(pq,n){
       var list=lists[n],k=pq.key;
@@ -1385,9 +1478,9 @@ function fetchNear(i){
   // sjö och skog efter platserna
   places.then(function(){return parts.reduce(function(chain,part){
     return chain.then(function(){
-      if(state.houses[i].lat!==lat)return;
+      if(stale())return;
       return overpass('[out:json][timeout:25];'+part.q).then(function(res){
-        if(state.houses[i].lat!==lat)return;
+        if(stale())return;
         var k=part.keys[0],best=null,name='';
         (res.elements||[]).forEach(function(e){
           if(classify(e.tags)!==k||!bigEnough(k,e,lat))return;
@@ -1403,17 +1496,26 @@ function fetchNear(i){
         hh.near[k]=best?Math.round(best.d):null;
         hh.nearNames[k]=best?(name||(k==='lake'?'Namnlös sjö':'')):'Inget inom '+fmtNum(NEAR_RADIUS[k],1)+' km';
         save();renderHouse(i);renderAll();
-      }).catch(function(){failed++;
-        // visa hellre att värdet saknas än ett gammalt, kanske felaktigt värde
-        var hh=state.houses[i],k=part.keys[0];hh.near[k]=null;hh.nearNames[k]='Kunde inte hämtas – försök igen';save();renderHouse(i);renderAll();
+      }).catch(function(){
+        // Overpass svarar inte: prova reservkällan, annars visa att värdet saknas (hellre än ett gammalt värde)
+        var k=part.keys[0];
+        return natureFallback(lat,lon,k).then(function(b){
+          if(stale())return;
+          approx=true;var hh=state.houses[i];hh.near[k]=b.d!=null?Math.round(b.d):null;
+          hh.nearNames[k]=b.d!=null?(b.name||(k==='lake'?'Namnlös sjö':''))+' (ungefärlig källa)':'Inget hittat inom '+fmtNum(NEAR_RADIUS[k],1)+' km (ungefärlig källa)';
+          save();renderHouse(i);renderAll();
+        }).catch(function(){
+          failed++;var hh=state.houses[i];hh.near[k]=null;hh.nearNames[k]='Kunde inte hämtas – försök igen';save();renderHouse(i);renderAll();
+        });
       }).then(function(){
         done++;if(done<total)nearStatus(i,'Platserna är klara – räknar avstånd till sjö och skog…',true);
       });
     });
   },Promise.resolve())}).then(function(){
-    if(state.houses[i].lat!==lat)return;
+    if(stale())return;
     // markeras klar bara om allt kom fram – annars görs ett nytt försök nästa gång sidan öppnas
-    if(!failed){state.houses[i].nearV=NEAR_VERSION;save()}
+    // ungefärliga värden från reservkällan ersätts av exakta nästa gång Overpass svarar
+    if(!failed&&!approx){state.houses[i].nearV=NEAR_VERSION;save()}
     nearStatus(i,failed?'Vissa avstånd kunde inte hämtas (kartservern är upptagen). Tryck på knappen igen om en stund eller fyll i dem själv.':'Klart! Avstånden är fågelvägen. Ändra dem om något inte stämmer.');
   });
 }
@@ -1445,7 +1547,7 @@ function photonNear(lat,lon,tags,radius,limit){
     tags.map(function(t){return '&osm_tag='+encodeURIComponent(t)}).join('');
   return timedFetch(url,8000).then(function(j){
     return (j.features||[]).map(function(f){var c=f.geometry.coordinates,p=f.properties;
-      return {lat:c[1],lon:c[0],name:p.name||'',type:p.osm_value,d:Math.round(haversine(lat,lon,c[1],c[0]))}})
+      return {lat:c[1],lon:c[0],name:p.name||'',type:p.osm_value,id:(p.osm_type||'')+p.osm_id,d:Math.round(haversine(lat,lon,c[1],c[0]))}})
       .sort(function(a,b){return a.d-b.d});
   }).catch(function(e){photonDown=true;throw e});
 }
@@ -1461,6 +1563,45 @@ function nominatimNear(lat,lon,amenity,km){
   });
   nomQueue=job.catch(function(){}).then(function(){return wait(1100)});
   return job;
+}
+/* Reserv för sjö och skog när Overpass inte svarar: namngivna kandidater från Photon,
+   konturer från Nominatim. Missar stora sjöar vars mittpunkt ligger långt bort. */
+function nominatimLookup(ids){
+  var job=nomQueue.then(function(){
+    return timedFetch('https://nominatim.openstreetmap.org/lookup?format=jsonv2&polygon_geojson=1&polygon_threshold=0.0001&osm_ids='+ids.join(','),20000,{headers:{'Accept-Language':'sv'}});
+  });
+  nomQueue=job.catch(function(){}).then(function(){return wait(1100)});
+  return job;
+}
+function geojsonRings(g){
+  var toR=function(r){return r.map(function(c){return {lat:c[1],lon:c[0]}})};
+  if(g.type==='Polygon')return {outer:[toR(g.coordinates[0])],all:g.coordinates.map(toR)};
+  if(g.type==='MultiPolygon')return {outer:g.coordinates.map(function(p){return toR(p[0])}),all:[].concat.apply([],g.coordinates.map(function(p){return p.map(toR)}))};
+  if(g.type==='LineString')return {outer:[],all:[toR(g.coordinates)]};
+  return null;
+}
+function natureFallback(lat,lon,k){
+  var tags=k==='lake'?['natural:water','water:lake']:['natural:wood','landuse:forest'];
+  return photonNear(lat,lon,tags,10,40).then(function(list){
+    var cand=list.filter(function(p){return p.id&&p.id!=='undefined'}).slice(0,10);
+    if(!cand.length)return {d:null};
+    var ids=cand.map(function(p){return p.id.charAt(0).toUpperCase()+p.id.replace(/^\D+/,'')});
+    return nominatimLookup(ids).then(function(res){
+      var best=null;
+      res.forEach(function(x){
+        var t=x.type,cat=x.category;
+        var ok=k==='lake'?((cat==='water'&&/^(lake|oxbow)$/.test(t))||(cat==='natural'&&t==='water')):/^(forest|wood)$/.test(t);
+        if(!ok||!x.geojson)return;
+        var rings=geojsonRings(x.geojson);if(!rings)return;
+        var area=rings.outer.reduce(function(s,r){return s+(polygonArea(r,lat)||0)},0);
+        var min=k==='lake'?(x.name?MIN_AREA.lake:MIN_AREA.lakeUnnamed):MIN_AREA.forest;
+        if(rings.outer.length&&area<min)return;
+        var d=Math.min.apply(null,rings.all.map(function(r){return geomDistance(lat,lon,r)}));
+        if(best==null||d<best.d)best={d:d,name:x.name||''};
+      });
+      return best&&best.d<=NEAR_RADIUS[k]*1000?best:{d:null};
+    });
+  });
 }
 function uniqueStops(list){var seen={};return list.filter(function(s){if(s.type!=='bus_stop')return false;
   var key=s.name||(s.lat.toFixed(4)+','+s.lon.toFixed(4));if(seen[key])return false;seen[key]=1;return true})}
@@ -1548,6 +1689,58 @@ function zoomHouse(i){
 }
 
 /* ---------- Övrigt UI ---------- */
+/* ---------- Restid till en gemensam målpunkt ---------- */
+var ROUTER='https://routing.openstreetmap.de/';
+function bindWork(){
+  var inp=$('#workAddr'),btn=$('#workGo'),msg=$('#workMsg');if(!inp)return;
+  var w=state.g.work;inp.value=w?w.address:'';msg.textContent=w?'Mäts mot: '+w.label:'';
+  function go(){
+    var q=inp.value.trim();
+    if(!q){state.g.work=null;save();msg.textContent='';[0,1].forEach(function(i){state.houses[i].travel=null});renderAll();return}
+    msg.textContent='Letar upp adressen…';
+    photon(q,1).then(function(fs){
+      if(!fs.length){msg.textContent='Hittade inte adressen – prova med ort.';return}
+      var f=fs[0];state.g.work={address:q,label:photonLabel(f.properties).title,lat:f.geometry.coordinates[1],lon:f.geometry.coordinates[0]};
+      msg.textContent='Mäts mot: '+state.g.work.label;save();[0,1].forEach(fetchTravel);
+    }).catch(function(){msg.textContent='Kunde inte söka upp adressen just nu.'});
+  }
+  btn.addEventListener('click',go);
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();go()}});
+}
+function route(profile,a,b){
+  return timedFetch(ROUTER+'routed-'+profile+'/route/v1/driving/'+a.lon+','+a.lat+';'+b.lon+','+b.lat+'?overview=false',15000)
+    .then(function(j){var r=j.routes&&j.routes[0];if(!r)throw new Error('ingen väg');return r});
+}
+function fetchTravel(i){
+  var h=state.houses[i],w=state.g.work;if(!w||h.lat==null)return;
+  var key=[h.lat,h.lon,w.lat,w.lon].join(',');
+  if(h.travel&&h.travel.key===key&&h.travel.car)return;
+  h.travel={key:key,loading:true};renderOutputs(i);
+  var a={lat:h.lat,lon:h.lon};
+  // bil enligt vägnätet; cykel och gång räknas från sträckan (16 resp. 5 km/h)
+  Promise.all([route('car',a,w).catch(function(){return null}),route('bike',a,w).catch(function(){return null}),route('foot',a,w).catch(function(){return null})]).then(function(r){
+    if(!state.houses[i].travel||state.houses[i].travel.key!==key)return;
+    var t={key:key};
+    if(r[0])t.car={min:Math.round(r[0].duration/60),km:r[0].distance/1000};
+    if(r[1])t.bike={min:Math.round(r[1].distance/1000/16*60),km:r[1].distance/1000};
+    if(r[2])t.foot={min:Math.round(r[2].distance/1000/5*60),km:r[2].distance/1000};
+    if(!r[0]&&!r[1]&&!r[2])t.error=true;
+    state.houses[i].travel=t;save();renderAll();
+  });
+}
+function fmtMin(m){return m==null?'–':m<60?m+' min':Math.floor(m/60)+' h '+(m%60)+' min'}
+function transitLink(h){var w=state.g.work;return 'https://www.google.com/maps/dir/?api=1&origin='+h.lat+','+h.lon+'&destination='+w.lat+','+w.lon+'&travelmode=transit'}
+
+// bokmärkesinstruktionen ligger i en sektion som byggs om – kopplas därför i build()
+function bindBookmarklet(){
+  var code=bookmarkletCode(),link=$('#bmLink');if(!link)return;link.href=code;
+  link.addEventListener('click',function(e){e.preventDefault();alert('Dra knappen till bokmärkesfältet i stället för att klicka på den. Klicka sedan på bokmärket när du är inne på en annons.')});
+  if(/^https?:/.test(location.href))$('#bmStep3').innerHTML='Husmyran öppnas i en ny flik och du väljer om bostaden ska bli A eller B. Uppgifter från Booli och mäklarsidan läggs ihop om du lägger dem på samma bostad.';
+  $('#btnCopyBm').addEventListener('click',function(){
+    var done=function(){alert('Bokmärkeskoden är kopierad.')};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).then(done,function(){prompt('Kopiera koden:',code)});else prompt('Kopiera koden:',code);
+  });
+}
 function bindGlobal(){
   // kartans teckenförklaring: visa/dölj platstyper och zooma
   $$('[data-mapshow]').forEach(function(cb){cb.checked=!!state.mapShow[cb.dataset.mapshow];
@@ -1557,13 +1750,10 @@ function bindGlobal(){
   var cs=$('#cmpSec');if(state.open.cmp===false)cs.open=false;
   cs.addEventListener('toggle',function(){state.open.cmp=cs.open;save()});
   $$('#tabs button').forEach(function(b){b.addEventListener('click',function(){setTab(+b.dataset.i)})});
-  var code=bookmarkletCode();$('#bmLink').href=code;
-  $('#bmLink').addEventListener('click',function(e){e.preventDefault();alert('Dra knappen till bokmärkesfältet i stället för att klicka på den. Klicka sedan på bokmärket när du är inne på en annons.')});
-  if(/^https?:/.test(location.href))$('#bmStep3').innerHTML='Husmyran öppnas i en ny flik och du väljer om bostaden ska bli A eller B. Uppgifter från Booli och mäklarsidan läggs ihop om du lägger dem på samma bostad.';
-  $('#btnCopyBm').addEventListener('click',function(){
-    var done=function(){alert('Bokmärkeskoden är kopierad.')};
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(code).then(done,function(){prompt('Kopiera koden:',code)});else prompt('Kopiera koden:',code);
-  });
+  // utskrift: jämförelsen fälls ut och kartan mäts om för pappersbredden
+  $('#btnPrint').addEventListener('click',function(){window.print()});
+  window.addEventListener('beforeprint',function(){$('#cmpSec').open=true;if(map)map.invalidateSize()});
+  window.addEventListener('afterprint',function(){if(map)map.invalidateSize()});
   $('#btnShare').addEventListener('click',function(){
     makeShareLink().then(function(url){
       var done=function(){alert('Länken är kopierad! Den innehåller hela jämförelsen (utom egna uppladdade bilder).')};
@@ -1641,7 +1831,7 @@ if(!checkShare())checkHashImport();
 // bostäder vars närområde räknades ut innan platserna sparades för kartan hämtas om
 // och bostäder med adress men utan läge slås upp
 [0,1].forEach(function(i){var h=state.houses[i];
-  if(h.lat!=null&&h.nearV!==NEAR_VERSION)fetchNear(i);else if(h.lat==null&&h.address)geocode(i)});
+  if(h.lat!=null&&h.nearV!==NEAR_VERSION)fetchNear(i);else if(h.lat==null&&h.address)geocode(i);else fetchTravel(i)});
 window.addEventListener('hashchange',function(){if(!checkShare())checkHashImport()});
 window.addEventListener('resize',function(){if(map)map.invalidateSize()});
 })();
