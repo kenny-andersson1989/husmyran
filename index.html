@@ -1368,6 +1368,9 @@ function haversine(a,b,c,d){var R=6371000,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,s=Ma
 function segDist(px,py,ax,ay,bx,by){var dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy,t=l?((px-ax)*dx+(py-ay)*dy)/l:0;t=Math.max(0,Math.min(1,t));var x=ax+t*dx-px,y=ay+t*dy-py;return Math.sqrt(x*x+y*y)}
 function geomDistance(lat,lon,geom){
   var kx=111320*Math.cos(lat*Math.PI/180),ky=110540,min=Infinity;
+  // punkter utanför sökrutan kan saknas (null) i Overpass-svaret
+  if(geom.some(function(g){return !g}))geom=geom.filter(Boolean);
+  if(!geom.length)return Infinity;
   var pts=geom.map(function(g){return [(g.lon-lon)*kx,(g.lat-lat)*ky]});
   for(var i=0;i<pts.length;i++){
     if(i>0)min=Math.min(min,segDist(0,0,pts[i-1][0],pts[i-1][1],pts[i][0],pts[i][1]));
@@ -1383,7 +1386,7 @@ function geomDistance(lat,lon,geom){
 }
 // yta i m² för ett slutet område (lokal plan projektion); null om området är avklippt vid sökrutan
 function polygonArea(geom,lat){
-  if(!geom||geom.length<4)return null;
+  if(!geom||geom.length<4||geom.some(function(g){return !g}))return null;
   var a=geom[0],z=geom[geom.length-1];if(a.lat!==z.lat||a.lon!==z.lon)return null;
   var kx=111320*Math.cos(lat*Math.PI/180),ky=110540,s=0;
   for(var i=1;i<geom.length;i++)s+=(geom[i-1].lon*kx)*(geom[i].lat*ky)-(geom[i].lon*kx)*(geom[i-1].lat*ky);
@@ -1392,8 +1395,15 @@ function polygonArea(geom,lat){
 // små vattenytor och skogsdungar räknas inte: sjö minst 1 ha (namnlös 3 ha), skog minst 2 ha
 var MIN_AREA={lake:10000,lakeUnnamed:30000,forest:20000};
 function bigEnough(k,e,lat){
-  if(e.type==='relation')return true; // multipolygoner är i regel stora
-  var area=polygonArea(e.geometry,lat);
+  var area;
+  if(e.type==='relation'){
+    // multipolygon: räkna ytan bara om alla yttre delar är hela slutna ringar (annars är den stor eller avklippt)
+    var outer=(e.members||[]).filter(function(m){return m.role==='outer'&&m.geometry});
+    if(!outer.length)return true;
+    var areas=outer.map(function(m){return polygonArea(m.geometry,lat)});
+    if(areas.some(function(a){return a==null}))return true;
+    area=areas.reduce(function(s,a){return s+a},0);
+  }else area=polygonArea(e.geometry,lat);
   if(area==null)return true;          // avklippt vid sökrutan = större än rutan
   if(k==='lake')return area>=(e.tags.name?MIN_AREA.lake:MIN_AREA.lakeUnnamed);
   if(k==='forest')return area>=MIN_AREA.forest;
@@ -1414,7 +1424,7 @@ function classify(tags){
 var OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 var NEAR_RADIUS={lake:3,forest:1.5,grocery:5,school:5,preschool:5,transit:2.5,center:20};
 function overpassOnce(q,n){
-  var ctl=window.AbortController?new AbortController():null,timer=ctl&&setTimeout(function(){ctl.abort()},30000);
+  var ctl=window.AbortController?new AbortController():null,timer=ctl&&setTimeout(function(){ctl.abort()},60000);
   return fetch(OVERPASS[n],{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ctl?ctl.signal:undefined})
     .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
     .finally(function(){clearTimeout(timer)});
@@ -1446,9 +1456,11 @@ function fetchNear(i){
   var W='[water~"^(lake|oxbow)$"]';
   // Sjö och skog kräver områdenas form och hämtas från Overpass, en fråga i taget.
   // Övriga platser hämtas från Photon (se photonNear), som är snabbare och mer tillgänglig.
+  // "out geom" (inte "out tags geom") – annars saknas relationernas medlemmar, och stora sjöar
+  // som Mälaren (byggda av många delar) får ingen kontur och hoppas över
   var parts=[
-    {keys:['lake'],q:'(way'+A(3000)+'[natural=water]'+W+';relation'+A(3000)+'[natural=water]'+W+';way'+A(3000)+'[natural=water][!water];relation'+A(3000)+'[natural=water][!water];);out tags geom('+bb(3200)+');'},
-    {keys:['forest'],q:'(way'+A(1500)+'[landuse=forest];way'+A(1500)+'[natural=wood];relation'+A(1500)+'[landuse=forest];relation'+A(1500)+'[natural=wood];);out tags geom('+bb(1700)+');'}
+    {keys:['lake'],q:'(way'+A(3000)+'[natural=water]'+W+';relation'+A(3000)+'[natural=water]'+W+';way'+A(3000)+'[natural=water][!water];relation'+A(3000)+'[natural=water][!water];);out geom('+bb(3200)+');'},
+    {keys:['forest'],q:'(way'+A(1500)+'[landuse=forest];way'+A(1500)+'[natural=wood];relation'+A(1500)+'[landuse=forest];relation'+A(1500)+'[natural=wood];);out geom('+bb(1700)+');'}
   ];
   var failed=0,done=0,total=parts.length+1,approx=false;
   // bara den senaste beräkningen för bostaden får skriva sina resultat
@@ -1479,7 +1491,7 @@ function fetchNear(i){
   places.then(function(){return parts.reduce(function(chain,part){
     return chain.then(function(){
       if(stale())return;
-      return overpass('[out:json][timeout:25];'+part.q).then(function(res){
+      return overpass('[out:json][timeout:50];'+part.q).then(function(res){
         if(stale())return;
         var k=part.keys[0],best=null,name='';
         (res.elements||[]).forEach(function(e){
@@ -1522,7 +1534,7 @@ function fetchNear(i){
 
 // Närmaste platser, sorterade efter avstånd. Photon först; svarar den inte används Nominatim
 // (som bara får frågas en gång per sekund och söker inom växande rutor runt bostaden).
-var NEAR_VERSION=6;
+var NEAR_VERSION=7;
 // kartdatan skiljer inte på skolformer – gymnasier, vuxenutbildning m.m. sorteras bort på namnet
 function isPrimarySchool(name){return !/gymnasi|komvux|vuxenutb|yrkeshög|folkhög|högskola|universitet|kulturskola|musikskola|trafikskola|körskola|dansskola|simskola|språkskola|\bsfi\b|lernia|folkuniversitet|naturbruk|yrkesskola/i.test(name||'')} // höjs när närhetsberäkningen ändras, så att sparade bostäder räknas om
 var PLACE_QUERIES=[
