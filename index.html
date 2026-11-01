@@ -82,19 +82,53 @@ section{margin-bottom:22px}
 .ed-head .t{min-width:0;flex:1}
 .ed-head .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ed-head .t span{font-size:13px;color:var(--muted)}
-.ed-head .cost{text-align:right;font-weight:800;font-size:22px;white-space:nowrap}
-.ed-head .cost small{display:block;font-size:11.5px;color:var(--muted);font-weight:700}
 .ed-media{height:170px;background:var(--cs);overflow:hidden}
 .ed-img{display:block;width:100%;height:100%;object-fit:cover;background:var(--line)}
 .ed-ill,.ed-ill svg{display:block;width:100%;height:100%}
 .head-foot{padding:10px 18px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.verdict{margin-top:14px;background:var(--brand-soft);color:var(--brand-ink);border-radius:12px;padding:10px 14px;font-weight:700;text-align:center}
+.a-c{color:var(--a);font-weight:800}.b-c{color:var(--b);font-weight:800}
+
+/* Översikt: de avgörande siffrorna direkt under huskorten */
+.ov{margin-top:14px;padding:0;overflow:hidden}
+.ov-lead{margin:0;padding:14px 18px;background:var(--brand-soft);color:var(--ink);font-size:16px;line-height:1.45}
+.ov-lead small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+table.ov-t{width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed}
+table.ov-t col.c1{width:36%}
+table.ov-t th,table.ov-t td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+table.ov-t thead th{font-size:13px;font-weight:800;color:var(--muted)}
+table.ov-t thead th.ha{color:var(--a)} table.ov-t thead th.hb{color:var(--b)}
+table.ov-t td.v{font-weight:700;font-variant-numeric:tabular-nums}
+table.ov-t td small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+table.ov-t tr.total td{font-weight:800;font-size:17px;background:#fbfdfe}
+table.ov-t tr.total td small{font-size:12px}
+.dv{font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
+.dv.good{color:var(--good)} .dv.bad{color:#c0603e}
+/* trafikljus för hur stor del av inkomsten boendet tar */
+.light{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;margin-top:2px}
+.light::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+.light.g{color:var(--good)} .light.y{color:#c4900c} .light.r{color:#c0503e}
+/* staplar för månadskostnadens delar */
+.ov-bars{padding:14px 18px 16px}
+.ov-bars h3{font-size:13px;color:var(--muted);margin:0 0 8px}
+.bar-row{display:grid;grid-template-columns:24px 1fr 92px;gap:10px;align-items:center;margin:6px 0}
+.bar-row .badge{width:24px;height:24px;font-size:12px}
+.bar{display:flex;height:22px;border-radius:6px;overflow:hidden;background:#f1f4f7}
+.bar i{display:block;height:100%;min-width:2px}
+.bar-row .bt{text-align:right;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+.bar-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted);margin-top:8px}
+.bar-leg span{display:inline-flex;align-items:center;gap:5px}
+.bar-leg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.s-int{background:#7b8fc7}.s-amort{background:repeating-linear-gradient(135deg,#3aa597 0 5px,#62bcb0 5px 9px)}.s-rent{background:#e0b75a}
+.s-drift{background:#dd9a85}.s-fee{background:#a9bccb}.s-costs{background:#b9a3d6}
 
 /* Gemensamma sektioner */
 details.sec{padding:0;margin-top:14px;overflow:visible}
 details.sec>summary{list-style:none;cursor:pointer;padding:15px 18px;font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
 details.sec>summary::-webkit-details-marker{display:none}
-details.sec>summary::after{content:"";margin-left:auto;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s}
+details.sec>summary .sec-t{flex:1;min-width:0}
+/* kort resultat i rubriken, så att man ser siffran utan att fälla ut */
+details.sec>summary .sec-res{font-size:13px;font-weight:600;color:var(--muted);text-align:right}
+details.sec>summary::after{content:"";margin-left:6px;flex:none;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s}
 details.sec[open]>summary::after{transform:rotate(-135deg)}
 details.sec>summary:hover{background:#fafcfd;border-radius:var(--radius)}
 .shared{border-top:1px solid var(--line);background:#fafcfd;padding:14px 18px}
@@ -153,6 +187,13 @@ details.sec>summary:hover{background:#fafcfd;border-radius:var(--radius)}
 .calc-list div.tot{font-weight:800;border-bottom:0}
 .calc-list div.gap{border:0;padding-top:8px;font-weight:800;font-size:12.5px;color:var(--muted)}
 .sumline{grid-column:1/-1;display:flex;justify-content:space-between;gap:10px;background:#f3f7fa;border-radius:10px;padding:8px 12px;font-size:13.5px;font-weight:700}
+/* driftkostnadens delar i en utfällbar del */
+details.split{border:1px dashed var(--line);border-radius:10px;padding:8px 12px}
+details.split>summary{cursor:pointer;font-size:13px;font-weight:800;color:var(--brand-ink)}
+details.split>summary .hint{font-weight:400;margin-left:4px}
+details.split[open]>summary{margin-bottom:10px}
+.drift-sum{background:#f3f7fa;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-weight:700}
+.drift-sum small{color:var(--muted);font-weight:400}
 .near-status{font-size:13px;color:var(--muted);margin:0 0 10px;min-height:20px}
 
 /* Jämförelse */
@@ -162,9 +203,11 @@ details.sec>summary:hover{background:#fafcfd;border-radius:var(--radius)}
 .diff-sum h3{margin:0 0 6px}
 .diff-sum ul{margin:0;padding-left:20px}
 .diff-sum li{margin:3px 0}
-.diff-sum .a-c{color:var(--a);font-weight:800}.diff-sum .b-c{color:var(--b);font-weight:800}
 table.cmp{width:100%;border-collapse:collapse;font-size:14.5px;table-layout:fixed}
-table.cmp col.c1{width:38%}
+table.cmp col.c1{width:31%} table.cmp col.cd{width:17%}
+/* detaljrader visas först när man ber om dem */
+table.cmp:not(.all) tr.det{display:none}
+.cmp-more{padding:12px 18px;border-top:1px solid var(--line);text-align:center}
 table.cmp th,table.cmp td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:break-word}
 table.cmp thead th{background:#fff;font-weight:800;border-bottom:2px solid var(--line);position:sticky;top:0;z-index:3;box-shadow:0 2px 0 var(--line)}
 table.cmp thead th.ha{color:var(--a)} table.cmp thead th.hb{color:var(--b)}
@@ -206,6 +249,8 @@ table.cmp td.lab small{display:block}
   table.cmp{font-size:11.5px}
   table.cmp th,table.cmp td{padding:4px 8px}
   table.cmp thead th{position:static}
+  table.cmp tr.det{display:table-row!important}
+  .cmp-more{display:none}
   #map{height:300px}
   .print-only{display:block!important}
 }
@@ -228,7 +273,6 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
   .heads{gap:10px}
   .ed-head{padding:10px 12px;gap:8px;flex-wrap:wrap}
   .ed-head .badge{width:28px;height:28px}
-  .ed-head .cost{font-size:18px;width:100%;text-align:left}
   .ed-media{height:100px}
   .head-foot{padding:8px 12px;font-size:12px}
   .pair{grid-template-columns:1fr}
@@ -237,7 +281,12 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
   .col-tag{top:62px}
   table.cmp{font-size:13.5px}
   table.cmp th,table.cmp td{padding:8px}
-  table.cmp col.c1{width:34%}
+  table.cmp col.c1{width:30%} table.cmp col.cd{width:20%}
+  table.cmp{font-size:13px}
+  table.ov-t th,table.ov-t td{padding:8px}
+  table.ov-t{font-size:14px} table.ov-t tr.total td{font-size:15px}
+  table.ov-t col.c1{width:30%}
+  .bar-row{grid-template-columns:24px 1fr 76px}
   #map{height:320px}
 }
 @media (max-width:520px){
@@ -245,6 +294,8 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
   .top-actions{margin-left:0;width:100%;justify-content:flex-start}
   .brand h1{font-size:22px}
   .col .g2{grid-template-columns:1fr}
+  table.ov-t td:first-child small{display:none}
+  table.ov-t{font-size:13px}
 }
 </style>
 </head>
@@ -283,7 +334,18 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
 
   <section id="app">
     <div class="heads" id="heads"></div>
-    <div class="verdict" id="verdict" hidden></div>
+    <!-- översikten och jämförelsen först, därefter det man fyller i och sist kartan -->
+    <div class="card ov" id="overview" hidden>
+      <p class="ov-lead" id="ovLead"></p>
+      <table class="ov-t" id="ovTable"></table>
+      <div class="ov-bars" id="ovBars"></div>
+    </div>
+    <details class="card sec" id="cmpSec" open>
+      <summary><span class="sec-t">📊 Jämförelse <small style="font-size:13px;font-weight:600;color:var(--muted)">– skillnaden visar B jämfört med A</small></span></summary>
+      <div class="diff-sum" id="diffSum"></div>
+      <div class="cmp-wrap" style="border-top:1px solid var(--line)"><table class="cmp" id="cmp"></table></div>
+      <div class="cmp-more"><button class="btn small" type="button" id="cmpMore"></button></div>
+    </details>
     <div class="tabs" id="tabs" style="margin-top:14px">
       <button type="button" data-i="0" class="on">A</button>
       <button type="button" data-i="1">B</button>
@@ -291,7 +353,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
     <div id="sections"></div>
   </section>
 
-  <!-- kartan direkt efter Närhet, som är sista sektionen ovan -->
+  <!-- kartan sist, direkt efter Närhet -->
   <section class="card">
     <h2>🗺️ Karta</h2>
     <div class="map-tools">
@@ -306,14 +368,6 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
     </div>
     <div id="map"></div>
     <p class="map-note" id="mapNote">Ringens färg visar vilken bostad platsen hör till (blå = A, orange = B). Klicka på en ikon för namn och avstånd. Du kan dra bostadsmarkörerna om läget inte stämmer.</p>
-  </section>
-
-  <section>
-    <details class="card sec" id="cmpSec" open style="margin-top:0">
-      <summary>📊 Jämförelse <small style="font-size:13px;font-weight:600;color:var(--muted)">– grönt markerar det bättre värdet</small></summary>
-      <div class="diff-sum" id="diffSum"></div>
-      <div class="cmp-wrap" style="border-top:1px solid var(--line)"><table class="cmp" id="cmp"></table></div>
-    </details>
   </section>
 
 </main>
@@ -687,8 +741,8 @@ function fText(key,label,cls,ph,hint){return '<div class="field '+(cls||'')+'"><
 /* ---------- Huvudkort och sektioner ---------- */
 function headHTML(i){
   return '<div class="card head '+(i?'b':'a')+'" data-h="'+i+'">'+
-    '<div class="ed-head"><div class="badge">'+letter(i)+'</div><div class="t"><b data-o="title"></b><span data-o="subtitle"></span></div>'+
-      '<div class="cost"><span data-o="cost"></span><small>per månad</small></div></div>'+
+    // månadskostnaden står i översikten under korten
+    '<div class="ed-head"><div class="badge">'+letter(i)+'</div><div class="t"><b data-o="title"></b><span data-o="subtitle"></span></div></div>'+
     '<div class="ed-media"><img class="ed-img" data-o="img" alt="" hidden><div class="ed-ill" data-o="ill" aria-hidden="true"></div></div>'+
     '<div class="head-foot"><span data-o="headPrice"></span><span data-o="headSqm"></span></div></div>';
 }
@@ -755,15 +809,20 @@ var SECTIONS=[
     '<div class="field" data-am="kr"><label>Amortering</label><div class="unit"><input data-f="amortKr" data-num inputmode="decimal"><span>kr/mån</span></div></div>'+
     '<div class="full amort-info" data-o="amortInfo"></div>'+
     '<div class="subhead">Löpande boendekostnader – välj om beloppet är per månad eller per år</div>'+
-    fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra','full')+
-    // elkostnad och elförbrukning bredvid varandra
-    fMoney('driftItems.el','El',DRIFT_HINTS.el)+
-    '<div class="field"><label>Elförbrukning</label><div class="unit"><input data-f="kwh" data-num inputmode="decimal"><span>kWh/år</span></div><span class="hint" data-o="kwhHint"></span></div>'+
-    DRIFT_ITEMS.filter(function(x){return x[0]!=='el'}).map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
-    fNum('household','Antal i hushållet','pers','Hur många som bor där')+
+    fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra')+
+    // driftkostnaden som ett belopp; delarna fälls ut vid behov
+    '<div data-o="driftEdit" style="display:contents">'+fMoney('driftItems.other','Driftkostnad totalt','Hela beloppet – eller dela upp det nedan')+'</div>'+
+    '<div class="field" data-o="driftSumBox"><label>Driftkostnad totalt</label><div class="drift-sum" data-o="driftSum"></div><span class="hint">Summan av delarna nedan</span></div>'+
+    '<details class="split full"><summary>Dela upp driftkostnaden <span class="hint">el, uppvärmning, vatten, försäkring …</span></summary><div class="g2">'+
+      // elkostnad och elförbrukning bredvid varandra
+      fMoney('driftItems.el','El',DRIFT_HINTS.el)+
+      '<div class="field"><label>Elförbrukning</label><div class="unit"><input data-f="kwh" data-num inputmode="decimal"><span>kWh/år</span></div><span class="hint" data-o="kwhHint"></span></div>'+
+      DRIFT_ITEMS.filter(function(x){return x[0]!=='el'}).map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
+      fNum('household','Antal i hushållet','pers','Hur många som bor där')+
+    '</div></details>'+
     '<div class="subhead">Övriga kostnader</div>'+
     COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
-    '<div class="subhead">Summering</div></div><div class="calc-list" data-o="calc"></div>'}},
+    '<div class="subhead">Lån och ränta</div></div><div class="calc-list" data-o="calc"></div>'}},
   // försäljning av nuvarande bostad – och om pengarna räcker till nästa köp
   {id:'sale',title:'🏷️ Försäljning av nuvarande bostad',body:function(i){return ''+
     '<div data-show="current"><div class="g2">'+
@@ -781,8 +840,7 @@ var SECTIONS=[
      '<div class="field"><label>Hushållets nettoinkomst</label><div class="unit"><input data-g="income" data-num inputmode="decimal"><span>kr/mån</span></div><span class="hint">Efter skatt, alla vuxna</span></div>'+
      '<div class="field"><label>Övriga levnadskostnader</label><div class="unit"><input data-g="otherExp" data-num inputmode="decimal"><span>kr/mån</span></div><span class="hint">Mat, bil, barn, försäkringar m.m.</span></div>'+
      '<div class="field"><label>Stresstest: räntan stiger med</label><select data-g="stress">'+[1,2,3,4,5].map(function(v){return '<option value="'+v+'">'+v+' procentenheter</option>'}).join('')+'</select><span class="hint">Bankerna räknar själva med högre ränta</span></div>'+
-     '</div>'},
-   body:function(i){return '<div class="calc-list" data-o="budgetCalc" style="margin-top:0"></div>'}},
+     '</div><p class="hint" style="margin:10px 0 0">Kvar att leva på och stresstestet visas i översikten högst upp.</p>'}},
   {id:'building',title:'🧱 Byggnad',body:function(i){return '<div class="g2">'+BUILDING.map(function(x){return fText('building.'+x[0],x[1])}).join('')+'</div>'}},
   {id:'features',title:'✨ Egenskaper',body:function(i){return '<div class="chips">'+
     FEATURES.map(function(f){return '<label class="chip"><input type="checkbox" data-feat="'+f[0]+'"><span>'+f[1]+'</span></label>'}).join('')+
@@ -808,12 +866,14 @@ var SECTIONS=[
 
 function build(){
   $('#heads').innerHTML=headHTML(0)+headHTML(1);
+  var filled=state.houses.some(function(h){return calc(h).has});
   $('#sections').innerHTML=SECTIONS.map(function(s){
-    var open=state.open[s.id]!=null?state.open[s.id]:(s.id==='import'?importShouldOpen():!!s.open);
-    return '<details class="card sec" data-sec="'+s.id+'"'+(open?' open':'')+'><summary>'+s.title+'</summary>'+
-      (s.shared?'<div class="shared">'+s.shared()+'</div>':'')+'<div class="pair">'+
+    // ifyllda bostäder: sektionerna börjar ihopfällda, resultatet syns i rubriken
+    var open=state.open[s.id]!=null?state.open[s.id]:(s.id==='import'?importShouldOpen():!!s.open&&!filled);
+    return '<details class="card sec" data-sec="'+s.id+'"'+(open?' open':'')+'><summary><span class="sec-t">'+s.title+'</span><span class="sec-res" data-res="'+s.id+'"></span></summary>'+
+      (s.shared?'<div class="shared">'+s.shared()+'</div>':'')+(s.body?'<div class="pair">'+
       [0,1].map(function(i){return '<div class="col '+(i?'b':'a')+'" data-h="'+i+'"><div class="col-tag" data-o="tag"></div>'+s.body(i)+'</div>'}).join('')+
-      '</div></details>';
+      '</div>':'')+'</details>';
   }).join('');
   $$('#sections details.sec').forEach(function(d){d.addEventListener('toggle',function(){state.open[d.dataset.sec]=d.open;save()})});
   bindBookmarklet();
@@ -951,7 +1011,6 @@ function renderOutputs(i){
   hq(i,'[data-o="priceLabel"]').textContent=h.current?'Bostadens värde (uppskattat)':'Pris';
   hq(i,'[data-o="title"]').textContent=houseName(i);
   hq(i,'[data-o="subtitle"]').textContent=[h.current?'Nuvarande':'',h.type,h.living?fmtNum(h.living,1)+' m²':'',h.rooms?fmtNum(h.rooms,1)+' rum':'',h.area].filter(Boolean).join(' · ');
-  hq(i,'[data-o="cost"]').textContent=c.has?kr(c.total):'–';
   hq(i,'[data-o="headPrice"]').textContent=c.price?(h.current?'Värde ':'Pris ')+kr(c.price):(h.current?'Värde saknas':'Pris saknas');
   hq(i,'[data-o="headSqm"]').textContent=c.sqm?kr(c.sqm)+'/m²':'';
   var img=hq(i,'[data-o="img"]'),ill=hq(i,'[data-o="ill"]');
@@ -964,6 +1023,11 @@ function renderOutputs(i){
   var amortInp=hq(i,'[data-f="amortPct"]');amortInp.disabled=h.amortMode!=='manual';
   if(h.amortMode!=='manual'){amortInp.value='';amortInp.placeholder=fmtNum(c.autoAmort)+' (automatiskt)'}
   // elpris per kWh när både kostnad och förbrukning finns
+  // driftkostnaden: ett eget totalbelopp (sparas som "Övrigt") tills den delas upp – då visas summan
+  var split=DRIFT_ITEMS.some(function(x){var v=h.driftItems[x[0]];return x[0]!=='other'&&v!=null&&v!==0});
+  hq(i,'[data-o="driftEdit"]').hidden=split;hq(i,'[data-o="driftSumBox"]').hidden=!split;
+  hq(i,'[data-o="driftSum"]').innerHTML=c.drift?kr(c.drift)+'/mån <small>· '+kr(c.drift*12)+'/år</small>':'–';
+  hqa(i,'[data-f="driftItems.other"]').forEach(function(inp){if(document.activeElement!==inp){var v=h.driftItems.other;inp.value=v==null?'':fmtNum(v,2)}});
   var elM=monthly(h,'driftItems.el');
   hq(i,'[data-o="kwhHint"]').textContent=elM&&h.kwh?'≈ '+fmtNum(elM*12/h.kwh,2)+' kr/kWh':'Mängd el, inte kostnad';
   // kontantinsats: förifylld med 15 % tills man skriver ett eget belopp
@@ -1005,16 +1069,9 @@ function renderOutputs(i){
   html+='<div class="rate-row"><span class="l"><span>Effektiv ränta '+fmtNum(c.rate,2)+' %</span>'+
       '<label class="toggle mini"><input type="checkbox" data-f="deduction"'+(h.deduction?' checked':'')+'><span class="sw"></span><span>Ränteavdrag 30 %</span></label></span>'+
     '<span class="r">'+(withDed?kr(c.interest-c.deduct)+'/mån<small>efter avdrag · '+kr(c.interest)+' före</small>':m(c.interest)+'<small>'+(c.interest?'före avdrag':'')+'</small>')+'</span></div>'+
-    row('Amortering '+fmtNum(c.amortPct,1)+' %',m(c.amort))+row('Avgift',m(c.rent))+
-    row('Driftkostnad'+(c.drift?' ('+kr(c.drift*12)+'/år)':''),m(c.drift))+
-    row('Fastighetsavgift',m(c.fee))+row('Övriga kostnader'+(c.costs?' ('+kr(c.costs*12)+'/år)':''),m(c.costs))+
-    row('Månadskostnad',c.has?kr(c.total):'–','tot')+
-    row('Engångskostnader vid köp','','gap')+
-    (c.br?row('Överlåtelseavgift (2,5 % av prisbasbeloppet, ca)',h.current?'–':(c.lagfart?kr(c.lagfart):'–'))+
-          row('Pantsättningsavgift (1 % av prisbasbeloppet, ca)',h.current?'–':(c.pantbrev?kr(c.pantbrev):'–'))
-        :row('Lagfart (1,5 % + 825 kr)',h.current?'–':(c.lagfart?kr(c.lagfart):(h.tenure==='Äganderätt'?'–':'Ingen')))+
-          row('Pantbrev (2 % av lånet utöver befintliga pantbrev + 375 kr)',h.current?'–':(c.pantbrev?kr(c.pantbrev):(h.tenure==='Äganderätt'&&c.price?'Inga nya behövs':'–'))))+
-    row('Kontanter som behövs',h.current?'–':(c.price?kr(c.cash):'–'),'tot');
+    row('Amortering '+fmtNum(c.amortPct,1)+' % (sparande)',m(c.amort))+
+    // månadskostnaden och engångskostnadernas delar står i översikten och jämförelsen
+    row('Kontanter vid köp',h.current?'Inget köp':(c.price?kr(c.cash):'–'),'tot');
   hq(i,'[data-o="calc"]').innerHTML=html;
   // försäljning (nuvarande bostad) och finansiering av köpet (annonsbostad)
   var s=c.sale;
@@ -1031,20 +1088,6 @@ function renderOutputs(i){
      (os?row('Pengar från försäljningen',kr(os.net))+
         row(os.net>=c.cash?'Över efter köpet':'Saknas',kr(Math.abs(os.net-c.cash)),'tot')
        :row('Pengar från försäljning','Markera en bostad som nuvarande'));
-  // hushållets ekonomi och stresstest
-  var inc=state.g.income;
-  hq(i,'[data-o="budgetCalc"]').innerHTML=
-    row('Boendekostnad',c.has?kr(c.total)+'/mån':'–')+
-    row('Om räntan stiger '+fmtNum(state.g.stress)+' procentenheter',c.has?kr(c.stressTotal)+'/mån':'–')+
-    (inc?row('Kvar att leva på',c.has?kr(c.left)+'/mån':'–','tot')+
-         row('Kvar vid högre ränta',c.has?kr(c.left-(c.stressTotal-c.total))+'/mån':'–')+
-         row('Boendet tar av inkomsten',c.has?fmtNum(c.total/inc*100,0)+' %':'–')
-        :row('Kvar att leva på','Fyll i nettoinkomst ovan','tot'))+
-    // kostnad över tid: allt utom amorteringen (som är sparande), plus engångskostnader vid köp
-    row('Över tid','','gap')+
-    row('Kostnad 5 år',c.has?kr(overTime(c,5)):'–')+
-    row('Kostnad 10 år',c.has?kr(overTime(c,10)):'–')+
-    row('Amorterat (sparat) på 10 år',c.has?kr(c.amort*120):'–');
   // restid till målpunkten
   var tv=h.travel,w=state.g.work,tr=hq(i,'[data-o="travel"]');
   tr.innerHTML=!w?row('Restid','Ange en adress ovan')
@@ -1206,26 +1249,91 @@ function renderAll(){
   // finansieringen av ett köp beror på den andra bostadens försäljning – uppdatera båda
   [0,1].forEach(renderOutputs);
   var A=state.houses[0],B=state.houses[1],ca=calc(A),cb=calc(B);
-  var verdict='';
-  if(ca.has&&cb.has){
-    var d=cb.total-ca.total,ab=Math.abs(d);
-    if(ab<1)verdict='Båda kostar lika mycket per månad.';
-    else if(A.current!==B.current){var ni=A.current?1:0,more=(ni===1?d:-d)>0;
-      verdict=houseName(ni)+' skulle kosta '+kr(ab)+' '+(more?'mer':'mindre')+' per månad än din nuvarande bostad ('+kr(ab*12)+' per år).';}
-    else verdict=houseName(d>0?0:1)+' är '+kr(ab)+' billigare per månad ('+kr(ab*12)+' per år).';
-  }
-  var v=$('#verdict');v.textContent=verdict;v.hidden=!verdict;
   $$('#tabs button').forEach(function(b){var i=+b.dataset.i;b.textContent=letter(i)+' · '+(state.houses[i].current?'Nuvarande':'Bostad '+letter(i))});
-  [0,1].forEach(function(i){var c=i?cb:ca,el=hq(i,'[data-o="cost"]');if(el)el.textContent=c.has?kr(c.total):'–'});
+  renderOverview(A,B,ca,cb);
+  renderSecResults(A,B,ca,cb);
   renderCompare(A,B,ca,cb);
   updateMap();
+}
+
+// avrundat för översikten: hundratal, och miljoner som "1,4 mkr"
+function krR(n){
+  if(n==null||!isFinite(n))return '–';
+  if(Math.abs(n)>=1e6)return (n/1e6).toLocaleString('sv-SE',{maximumFractionDigits:2})+' mkr';
+  return (Math.round(n/(Math.abs(n)>=1000?100:10))*(Math.abs(n)>=1000?100:10)).toLocaleString('sv-SE')+' kr';
+}
+var AB=['<span class="a-c">A</span>','<span class="b-c">B</span>'];
+// pengar som blir över (eller saknas) när en bostad köps med pengarna från den nuvarande
+function fundsLeft(i){
+  var h=state.houses[i],o=state.houses[1-i];if(h.current||!o.current)return null;
+  var c=calc(h),os=calc(o).sale;return c.price&&os?os.net-c.cash:null;
+}
+function renderOverview(A,B,ca,cb){
+  var ov=$('#overview');ov.hidden=!(ca.has||cb.has);if(ov.hidden)return;
+  var cs=[ca,cb],inc=state.g.income;
+  // inledande mening: boendekostnaden skild från amorteringen, som är ett sparande
+  var lead='';
+  if(ca.has&&cb.has){
+    var d=cb.totalExAmort-ca.totalExAmort,da=cb.amort-ca.amort,cur=A.current!==B.current?(A.current?0:1):-1;
+    var pre=cur>=0?AB[1-cur]+' kostar <b>'+krR(Math.abs(cur?-d:d))+' '+((cur?-d:d)>0?'mer':'mindre')+'</b> per månad att bo i än din nuvarande bostad.'
+      :AB[d>0?0:1]+' är <b>'+krR(Math.abs(d))+' billigare</b> per månad att bo i.';
+    if(Math.abs(d)<50)pre='Båda kostar ungefär lika mycket per månad att bo i.';
+    var sub=Math.abs(da)>=100?'Dessutom amorterar du '+krR(Math.abs(da))+' mer i '+(da>0?'B':'A')+' – det är ett sparande, inte en kostnad. Att betala totalt skiljer '+krR(Math.abs(cb.total-ca.total))+' per månad.':'';
+    lead=pre+(sub?'<small>'+sub+'</small>':'');
+  }else lead='Fyll i båda bostäderna så jämförs de här.';
+  $('#ovLead').innerHTML=lead;
+  // rader: etikett, värde för A och B, riktning (-1 lägre är bättre, 1 högre är bättre), klass, förklaring, extra under värdet
+  var rows=[];
+  function row(label,sub,va,vb,dir,cls,extra){
+    var has=va!=null&&vb!=null,dv='';
+    if(has&&Math.abs(vb-va)>=1){var df=vb-va,good=dir?(df>0)===(dir>0):null;
+      dv='<span class="dv'+(good===true?' good':good===false?' bad':'')+'">'+(df>0?'+':'−')+krR(Math.abs(df))+'</span>'}
+    var f=function(v,k){return v==null?'–':krR(v)+(extra?extra(k):'')};
+    rows.push('<tr class="'+(cls||'')+'"><td>'+label+(sub?'<small>'+sub+'</small>':'')+'</td><td class="v">'+f(va,0)+'</td><td class="v">'+f(vb,1)+'</td><td>'+dv+'</td></tr>');
+  }
+  var val=function(k){return [ca.has?ca[k]:null,cb.has?cb[k]:null]};
+  var ded=A.deduction||B.deduction;
+  var v=val('totalExAmort');row('Boendekostnad / mån','ränta'+(ded?' efter avdrag':'')+', avgift, drift och övrigt',v[0],v[1],-1);
+  v=val('amort');row('Amortering / mån','sparande i bostaden',v[0],v[1],0);
+  // trafikljus: andel av nettoinkomsten som går till boendet
+  var light=function(k){var c=cs[k];if(!inc||!c.has)return '';var p=c.total/inc*100;
+    return '<br><span class="light '+(p<=30?'g':p<=40?'y':'r')+'">'+fmtNum(p,0)+' % av inkomsten</span>'};
+  v=val('total');row('Att betala / mån','boendekostnad + amortering',v[0],v[1],-1,'total',light);
+  v=val('stressTotal');row('Om räntan stiger '+fmtNum(state.g.stress)+' %-enheter','att betala per månad',v[0],v[1],-1);
+  if(inc){v=val('left');row('Kvar att leva på / mån','nettoinkomst minus boende'+(state.g.otherExp?' och övriga utgifter':''),v[0],v[1],1,'total')}
+  else rows.push('<tr><td>Kvar att leva på</td><td colspan="3" class="hint">Fyll i hushållets nettoinkomst under Hushållets ekonomi</td></tr>');
+  if(!A.current||!B.current){
+    var cash=[A.current?null:ca.cash,B.current?null:cb.cash];
+    var fl=[fundsLeft(0),fundsLeft(1)],flTxt=function(k){var x=fl[k];return x==null?'':'<br><small>'+(x>=0?krR(x)+' över efter köpet':krR(-x)+' saknas')+'</small>'};
+    rows.push('<tr><td>Kontanter vid köp<small>kontantinsats och köpets engångskostnader</small></td><td class="v">'+(cash[0]==null?'–':krR(cash[0])+flTxt(0))+'</td><td class="v">'+(cash[1]==null?'–':krR(cash[1])+flTxt(1))+'</td><td></td></tr>');
+  }
+  $('#ovTable').innerHTML='<colgroup><col class="c1"><col><col><col style="width:17%"></colgroup><thead><tr><th></th><th class="ha">A</th><th class="hb">B</th><th>Skillnad</th></tr></thead><tbody>'+rows.join('')+'</tbody>';
+  // stapel per bostad med månadskostnadens delar, i samma skala
+  var parts=[['int','Ränta',function(c){return c.interest-c.deduct}],['amort','Amortering (sparande)',function(c){return c.amort}],['rent','Avgift/hyra',function(c){return c.rent}],
+    ['drift','Drift',function(c){return c.drift}],['fee','Fastighetsavgift',function(c){return c.fee}],['costs','Övrigt',function(c){return c.costs}]];
+  var max=Math.max(ca.has?ca.total:0,cb.has?cb.total:0)||1;
+  $('#ovBars').innerHTML='<h3>Vart pengarna går varje månad</h3>'+[0,1].map(function(k){var c=cs[k];
+    return '<div class="bar-row"><span class="badge '+(k?'b':'a')+'" style="background:var('+(k?'--b':'--a')+')">'+letter(k)+'</span><div class="bar">'+
+      (c.has?parts.map(function(p){var x=p[2](c);return x>0?'<i class="s-'+p[0]+'" style="width:'+(x/max*100).toFixed(2)+'%" title="'+p[1]+': '+kr(x)+'/mån"></i>':''}).join(''):'')+
+      '</div><span class="bt">'+(c.has?krR(c.total):'–')+'</span></div>'}).join('')+
+    '<div class="bar-leg">'+parts.map(function(p){return '<span><i class="s-'+p[0]+'"></i>'+p[1]+'</span>'}).join('')+'</div>';
+}
+// kort resultat i sektionernas rubriker
+function renderSecResults(A,B,ca,cb){
+  function set(id,html){var el=$('[data-res="'+id+'"]');if(el)el.innerHTML=html||''}
+  function pair(fa,fb){return fa==null&&fb==null?'':AB[0]+' '+(fa==null?'–':fa)+' · '+AB[1]+' '+(fb==null?'–':fb)}
+  set('house',pair(A.living?fmtNum(A.living,1)+' m²':null,B.living?fmtNum(B.living,1)+' m²':null));
+  set('loan',ca.has||cb.has?pair(ca.has?krR(ca.total):null,cb.has?krR(cb.total):null)+' /mån':'');
+  var cur=A.current?0:B.current?1:-1,s=cur>=0?[ca,cb][cur].sale:null;
+  set('sale',s?'Kvar efter försäljning '+krR(s.net):'');
+  set('budget',state.g.income&&(ca.has||cb.has)?'Kvar att leva på '+pair(ca.has?krR(ca.left):null,cb.has?krR(cb.left):null):'');
 }
 
 // kort lista med de viktigaste skillnaderna, överst i jämförelsen
 function renderDiffSummary(A,B,ca,cb){
   var nA='<span class="a-c">A</span>',nB='<span class="b-c">B</span>',out=[];
   function who(d){return d>0?nB:nA}
-  if(ca.has&&cb.has){var d=cb.total-ca.total;if(Math.abs(d)>=1)out.push(who(-d)+' är <b>'+kr(Math.abs(d))+'</b> billigare per månad ('+kr(Math.abs(d)*12)+' per år)')}
+  // månadskostnaden står redan i översikten – här bara skillnaden över tid
   if(ca.has&&cb.has){var d10=overTime(cb,10)-overTime(ca,10);if(Math.abs(d10)>=1)out.push('På 10 år skiljer det <b>'+kr(Math.abs(d10))+'</b> till '+who(-d10)+':s fördel')}
   if(ca.price&&cb.price&&!A.current&&!B.current){var dp=cb.price-ca.price;if(dp)out.push(who(-dp)+' är <b>'+kr(Math.abs(dp))+'</b> billigare att köpa')}
   // who(x): x>0 pekar ut B – "större hos B" = B−A, "närmare/kortare hos B" = A−B
@@ -1248,65 +1356,84 @@ function renderDiffSummary(A,B,ca,cb){
 }
 function renderCompare(A,B,ca,cb){
   renderDiffSummary(A,B,ca,cb);
-  var rows=[];
-  function sec(t){rows.push('<tr class="sec"><td colspan="3">'+t+'</td></tr>')}
+  // varje rad: {html, det, sec} – detaljrader döljs tills man ber om dem
+  var rows=[],DET=false;
+  function sec(t){rows.push({sec:true,html:'<td colspan="4">'+t+'</td>'})}
   // dir: -1 lägre är bättre, 1 högre är bättre, 0 ingen markering
-  function r(label,va,vb,fa,fb,dir,cls,sub){
-    var wa='',wb='';
-    if(dir&&va!=null&&vb!=null&&isFinite(va)&&isFinite(vb)&&Math.abs(va-vb)>1e-9){
-      if((va<vb)===(dir<0))wa=' win';else wb=' win';
-    }
-    rows.push('<tr class="'+(cls||'')+'"><td class="lab">'+label+(sub?'<small>'+sub+'</small>':'')+'</td><td class="v'+wa+'">'+fa+'</td><td class="v'+wb+'">'+fb+'</td></tr>');
+  // df: formaterar skillnaden B − A (utelämnad = ingen skillnad visas)
+  function r(label,va,vb,fa,fb,dir,cls,sub,df){
+    var wa='',wb='',num=va!=null&&vb!=null&&isFinite(va)&&isFinite(vb)&&Math.abs(va-vb)>1e-9;
+    // grönt bara på huvudraderna; detaljerna har skillnadskolumnen
+    if(dir&&num&&!DET){if((va<vb)===(dir<0))wa=' win';else wb=' win'}
+    var dv='';
+    if(df&&num){var d=vb-va,good=dir?(d>0)===(dir>0):null;
+      dv='<span class="dv'+(good===true?' good':good===false?' bad':'')+'">'+(d>0?'+':'−')+df(Math.abs(d))+'</span>'}
+    rows.push({det:DET,html:'<td class="lab">'+label+(sub?'<small>'+sub+'</small>':'')+'</td><td class="v'+wa+'">'+fa+'</td><td class="v'+wb+'">'+fb+'</td><td>'+dv+'</td>',cls:cls});
   }
   function krOr(v){return v!=null?kr(v):'–'}
-  function rk(label,va,vb,dir,cls,sub){r(label,va,vb,krOr(va),krOr(vb),dir,cls,sub)}
+  function rk(label,va,vb,dir,cls,sub){r(label,va,vb,krOr(va),krOr(vb),dir,cls,sub,kr)}
   // månadsbelopp med årsbelopp under
-  function rm(label,va,vb,dir){var f=function(v){return v!=null?kr(v)+'<br><small>'+kr(v*12)+'/år</small>':'–'};r(label,va,vb,f(va),f(vb),dir)}
+  function rm(label,va,vb,dir){var f=function(v){return v!=null?kr(v)+'<br><small>'+kr(v*12)+'/år</small>':'–'};r(label,va,vb,f(va),f(vb),dir,'','',kr)}
   function any(va,vb){return (va!=null&&va!=='')||(vb!=null&&vb!=='')}
   function txt(label,va,vb){if(any(va,vb))r(label,null,null,esc(va||'–'),esc(vb||'–'),0)}
   function unit(v,u,dec){return v!=null?fmtNum(v,dec==null?1:dec)+' '+u:'–'}
+  function du(u,dec){return function(x){return fmtNum(x,dec==null?1:dec)+' '+u}}
   var cur=function(h){return h.current};
+  var has=function(c,v){return c.has?v:null};
 
   sec('Ekonomi per månad');
-  r(A.current||B.current?'Pris / värde':'Pris',ca.price||null,cb.price||null,ca.price?kr(ca.price):'–',cb.price?kr(cb.price):'–',A.current||B.current?0:-1);
-  r('Pris per m²',ca.sqm,cb.sqm,krOr(ca.sqm),krOr(cb.sqm),A.current||B.current?0:-1);
-  r('Lånebelopp',ca.loan,cb.loan,kr(ca.loan)+(ca.price?'<br><small>'+fmtNum(ca.ltv*100,1)+' % belåning</small>':''),kr(cb.loan)+(cb.price?'<br><small>'+fmtNum(cb.ltv*100,1)+' % belåning</small>':''),-1);
-  r('Effektiv ränta',ca.interest,cb.interest,kr(ca.interest)+'<br><small>'+fmtNum(ca.rate,2)+' %</small>',kr(cb.interest)+'<br><small>'+fmtNum(cb.rate,2)+' %</small>',-1);
+  var ded=A.deduction===B.deduction?(A.deduction?'efter ränteavdrag':'före ränteavdrag'):'A '+(A.deduction?'efter':'före')+', B '+(B.deduction?'efter':'före')+' ränteavdrag';
+  rk('Boendekostnad',has(ca,ca.totalExAmort),has(cb,cb.totalExAmort),-1,'','ränta, avgift, drift och övrigt – '+ded);
+  r('Amortering',has(ca,ca.amort),has(cb,cb.amort),ca.has?kr(ca.amort)+'<br><small>'+fmtNum(ca.amortPct,1)+' %/år</small>':'–',cb.has?kr(cb.amort)+'<br><small>'+fmtNum(cb.amortPct,1)+' %/år</small>':'–',0,'','ett sparande, inte en kostnad',kr);
+  rk('Att betala per månad',has(ca,ca.total),has(cb,cb.total),-1,'total','boendekostnad + amortering');
+  rk('Om räntan stiger '+fmtNum(state.g.stress)+' %-enheter',has(ca,ca.stressTotal),has(cb,cb.stressTotal),-1,'','stresstest, att betala per månad');
+  if(state.g.income)rk('Kvar att leva på',has(ca,ca.left),has(cb,cb.left),1,'total','nettoinkomst minus boende och övriga utgifter');
+  DET=true;
+  r(A.current||B.current?'Pris / värde':'Pris',ca.price||null,cb.price||null,ca.price?kr(ca.price):'–',cb.price?kr(cb.price):'–',A.current||B.current?0:-1,'','',kr);
+  r('Pris per m²',ca.sqm,cb.sqm,krOr(ca.sqm),krOr(cb.sqm),A.current||B.current?0:-1,'','',kr);
+  r('Lånebelopp',ca.loan,cb.loan,kr(ca.loan)+(ca.price?'<br><small>'+fmtNum(ca.ltv*100,1)+' % belåning</small>':''),kr(cb.loan)+(cb.price?'<br><small>'+fmtNum(cb.ltv*100,1)+' % belåning</small>':''),0,'','',kr);
+  r('Ränta',ca.interest,cb.interest,kr(ca.interest)+'<br><small>'+fmtNum(ca.rate,2)+' %</small>',kr(cb.interest)+'<br><small>'+fmtNum(cb.rate,2)+' %</small>',-1,'','före ränteavdrag',kr);
   txt('Räntan bunden till',A.current?A.rateFixedUntil:'',B.current?B.rateFixedUntil:'');
   if(A.deduction||B.deduction)r('Ränteavdrag',null,null,A.deduction?'−'+kr(ca.deduct):'Ej avdraget',B.deduction?'−'+kr(cb.deduct):'Ej avdraget',0);
-  r('Amortering',ca.amort,cb.amort,kr(ca.amort)+'<br><small>'+fmtNum(ca.amortPct,1)+' %/år</small>',kr(cb.amort)+'<br><small>'+fmtNum(cb.amortPct,1)+' %/år</small>',-1);
   if(any(A.rent,B.rent))rk('Avgift / hyra',A.rent,B.rent,-1);
   var dA=driftMonthly(A),dB=driftMonthly(B);
   if(any(dA,dB))rm('Driftkostnad',dA,dB,-1);
   var feeTxt=function(h,c){return kr(c.fee)+(c.feeFree&&h.propertyFee==null?'<br><small>Avgiftsfri t.o.m. '+(h.year+14)+' (nybyggt)</small>':'')};
-  r('Fastighetsavgift',ca.fee,cb.fee,feeTxt(A,ca),feeTxt(B,cb),-1);
+  r('Fastighetsavgift',ca.fee,cb.fee,feeTxt(A,ca),feeTxt(B,cb),-1,'','',kr);
   COSTS.forEach(function(x){var a=monthly(A,'costs.'+x[0]),b=monthly(B,'costs.'+x[0]);if(any(a,b))rm(x[1],a,b,-1)});
-  rk('Månadskostnad',ca.has?ca.total:null,cb.has?cb.total:null,-1,'total',A.deduction===B.deduction?(A.deduction?'efter ränteavdrag':'före ränteavdrag'):'A '+(A.deduction?'efter':'före')+', B '+(B.deduction?'efter':'före')+' ränteavdrag');
-  rk('Månadskostnad utan amortering',ca.has?ca.totalExAmort:null,cb.has?cb.totalExAmort:null,-1,'','amorteringen är ett sparande');
-  rk('Om räntan stiger '+fmtNum(state.g.stress)+' %-enheter',ca.has?ca.stressTotal:null,cb.has?cb.stressTotal:null,-1,'','stresstest');
-  if(state.g.income)rk('Kvar att leva på',ca.has?ca.left:null,cb.has?cb.left:null,1,'total','nettoinkomst minus boende och övriga utgifter');
+  DET=false;
+
+  sec('Över tid');
+  rk('Kostnad 10 år',has(ca,overTime(ca,10)),has(cb,overTime(cb,10)),-1,'','utan amortering, med köpets engångskostnader');
   if(ca.sale||cb.sale)r('Pengar kvar efter försäljning',null,null,ca.sale?kr(ca.sale.net):'–',cb.sale?kr(cb.sale.net):'–',0,'','nuvarande bostad');
-  rk('Kostnad 5 år',ca.has?overTime(ca,5):null,cb.has?overTime(cb,5):null,-1,'','utan amortering, med köpets engångskostnader');
-  rk('Kostnad 10 år',ca.has?overTime(ca,10):null,cb.has?overTime(cb,10):null,-1);
+  DET=true;
+  rk('Kostnad 5 år',has(ca,overTime(ca,5)),has(cb,overTime(cb,5)),-1);
+  r('Amorterat på 10 år',has(ca,ca.amort*120),has(cb,cb.amort*120),ca.has?kr(ca.amort*120):'–',cb.has?kr(cb.amort*120):'–',0,'','sparat i bostaden',kr);
+  DET=false;
 
   if(!cur(A)||!cur(B)){
     sec('Vid köp (engångskostnader)');
     var dash=function(h,v){return h.current?'–':kr(v)};
+    var fl=function(i){var x=fundsLeft(i);return x==null?'':'<br><small>'+(x>=0?kr(x)+' över efter köpet':kr(-x)+' saknas')+'</small>'};
+    r('Kontanter som behövs',null,null,cur(A)||!ca.price?'–':kr(ca.cash)+fl(0),cur(B)||!cb.price?'–':kr(cb.cash)+fl(1),0,'total','insats + '+(ca.br||cb.br?'avgifter':'lagfart + pantbrev'));
+    DET=true;
     var pc=function(c){return c.price?'<br><small>'+fmtNum(c.downPct,1)+' % av priset</small>':''};
     r('Kontantinsats',null,null,cur(A)?'–':kr(ca.down)+pc(ca),cur(B)?'–':kr(cb.down)+pc(cb),0);
     if(ca.extra||cb.extra)r('Extra kontantinsats',null,null,dash(A,ca.extra),dash(B,cb.extra),0);
-    r('Lagfart',cur(A)?null:ca.lagfart,cur(B)?null:cb.lagfart,dash(A,ca.lagfart),dash(B,cb.lagfart),-1,'','1,5 % av priset + 825 kr');
-    r('Pantbrev',cur(A)?null:ca.pantbrev,cur(B)?null:cb.pantbrev,dash(A,ca.pantbrev),dash(B,cb.pantbrev),-1,'','2 % av lånet utöver befintliga pantbrev + 375 kr');
-    r('Kontanter som behövs',ca.cash,cb.cash,cur(A)?'–':kr(ca.cash),cur(B)?'–':kr(cb.cash),-1,'total','insats + lagfart + pantbrev');
+    r(ca.br||cb.br?'Lagfart / överlåtelseavgift':'Lagfart',null,null,dash(A,ca.lagfart),dash(B,cb.lagfart),0,'',ca.br||cb.br?'':'1,5 % av priset + 825 kr');
+    r(ca.br||cb.br?'Pantbrev / pantsättningsavgift':'Pantbrev',null,null,dash(A,ca.pantbrev),dash(B,cb.pantbrev),0,'',ca.br||cb.br?'':'2 % av lånet utöver befintliga pantbrev + 375 kr');
+    DET=false;
   }
 
   var anyDrift=DRIFT_ITEMS.some(function(x){return any(A.driftItems[x[0]],B.driftItems[x[0]])})||any(A.kwh,B.kwh);
   if(anyDrift){
+    DET=true;
     sec('Driftkostnad – fördelning');
     DRIFT_ITEMS.forEach(function(x){var a=monthly(A,'driftItems.'+x[0]),b=monthly(B,'driftItems.'+x[0]);if(any(a,b))rm(x[1],a,b,-1)});
     var ya=driftItemsMonthly(A),yb=driftItemsMonthly(B);if(ya!=null||yb!=null)rm('Summa',ya,yb,-1);
-    if(any(A.kwh,B.kwh))r('Elförbrukning',A.kwh,B.kwh,unit(A.kwh,'kWh/år',0),unit(B.kwh,'kWh/år',0),-1);
+    if(any(A.kwh,B.kwh))r('Elförbrukning',A.kwh,B.kwh,unit(A.kwh,'kWh/år',0),unit(B.kwh,'kWh/år',0),-1,'','',du('kWh',0));
     if(any(A.household,B.household))r('Antal i hushållet',null,null,A.household||'–',B.household||'–',0);
+    DET=false;
   }
 
   if(state.g.work){
@@ -1314,52 +1441,66 @@ function renderCompare(A,B,ca,cb){
     var tt=function(h,m){var t=h.travel&&h.travel[m];return t&&t.km<=maxKm[m]?t.min:null};
     var tf=function(h,m){var t=h.travel&&h.travel[m];return !t?'–':t.km>maxKm[m]?'För långt':fmtMin(t.min)+'<br><small>'+fmtNum(t.km,1)+' km</small>'};
     sec('Restid till '+esc(state.g.work.label));
-    r('🚗 Bil',tt(A,'car'),tt(B,'car'),tf(A,'car'),tf(B,'car'),-1);
-    r('🚲 Cykel',tt(A,'bike'),tt(B,'bike'),tf(A,'bike'),tf(B,'bike'),-1);
-    r('🚶 Gång',tt(A,'foot'),tt(B,'foot'),tf(A,'foot'),tf(B,'foot'),-1);
+    r('🚗 Bil',tt(A,'car'),tt(B,'car'),tf(A,'car'),tf(B,'car'),-1,'','',fmtMin);
+    DET=true;
+    r('🚲 Cykel',tt(A,'bike'),tt(B,'bike'),tf(A,'bike'),tf(B,'bike'),-1,'','',fmtMin);
+    r('🚶 Gång',tt(A,'foot'),tt(B,'foot'),tf(A,'foot'),tf(B,'foot'),-1,'','',fmtMin);
+    DET=false;
   }
 
   sec('Bostaden');
+  r('Boarea',A.living,B.living,unit(A.living,'m²'),unit(B.living,'m²'),1,'','',du('m²'));
+  r('Rum',A.rooms,B.rooms,A.rooms?fmtNum(A.rooms,1):'–',B.rooms?fmtNum(B.rooms,1):'–',1,'','',du('',1));
+  if(any(A.plot,B.plot))r('Tomtarea',A.plot,B.plot,unit(A.plot,'m²',0),unit(B.plot,'m²',0),1,'','',du('m²',0));
+  r('Byggår',A.year,B.year,A.year||'–',B.year||'–',1,'','',du('år',0));
+  var eA=A.energyClass?ENERGY.indexOf(A.energyClass):null,eB=B.energyClass?ENERGY.indexOf(B.energyClass):null;
+  r('Energiklass',eA,eB,esc(A.energyClass||'–'),esc(B.energyClass||'–'),-1);
+  DET=true;
   r('Typ',null,null,esc(A.type),esc(B.type),0);
   r('Upplåtelseform',null,null,esc(A.tenure),esc(B.tenure),0);
   txt('Område',A.area,B.area);
-  r('Boarea',A.living,B.living,unit(A.living,'m²'),unit(B.living,'m²'),1);
-  if(any(A.extraArea,B.extraArea))r('Biarea',A.extraArea,B.extraArea,unit(A.extraArea,'m²'),unit(B.extraArea,'m²'),1);
-  r('Rum',A.rooms,B.rooms,A.rooms?fmtNum(A.rooms,1):'–',B.rooms?fmtNum(B.rooms,1):'–',1);
-  if(any(A.bedrooms,B.bedrooms))r('Varav sovrum',A.bedrooms,B.bedrooms,A.bedrooms||'–',B.bedrooms||'–',1);
-  if(any(A.plot,B.plot))r('Tomtarea',A.plot,B.plot,unit(A.plot,'m²',0),unit(B.plot,'m²',0),1);
-  r('Byggår',A.year,B.year,A.year||'–',B.year||'–',1);
+  if(any(A.extraArea,B.extraArea))r('Biarea',A.extraArea,B.extraArea,unit(A.extraArea,'m²'),unit(B.extraArea,'m²'),1,'','',du('m²'));
+  if(any(A.bedrooms,B.bedrooms))r('Varav sovrum',A.bedrooms,B.bedrooms,A.bedrooms||'–',B.bedrooms||'–',1,'','',du('',0));
   txt('Våning',A.floor,B.floor);
-  var eA=A.energyClass?ENERGY.indexOf(A.energyClass):null,eB=B.energyClass?ENERGY.indexOf(B.energyClass):null;
-  r('Energiklass',eA,eB,esc(A.energyClass||'–'),esc(B.energyClass||'–'),-1);
   r('Uppvärmning',null,null,esc(A.heating||'–')+(A.heatingNote?'<br><small>'+esc(A.heatingNote)+'</small>':''),esc(B.heating||'–')+(B.heatingNote?'<br><small>'+esc(B.heatingNote)+'</small>':''),0);
+  DET=false;
 
   if(BUILDING.some(function(x){return any(A.building[x[0]],B.building[x[0]])})){
+    DET=true;
     sec('Byggnad');
     BUILDING.forEach(function(x){txt(x[1],A.building[x[0]],B.building[x[0]])});
+    DET=false;
   }
 
   sec('Egenskaper');
   var yes='<span class="yes">✓ Ja</span>',no='<span class="no">–</span>';
-  FEATURES.forEach(function(f){
-    var a=!!A.features[f[0]],b=!!B.features[f[0]];
-    if(a||b)r(f[1],a?1:0,b?1:0,a?yes:no,b?yes:no,1);
-  });
+  // det som bara den ena har syns direkt; det som båda har ligger bland detaljerna
+  function feat(label,a,b){DET=a&&b;r(label,a?1:0,b?1:0,a?yes:no,b?yes:no,1);DET=false}
+  FEATURES.forEach(function(f){var a=!!A.features[f[0]],b=!!B.features[f[0]];if(a||b)feat(f[1],a,b)});
   var extras=[];A.extraFeatures.concat(B.extraFeatures).forEach(function(x){if(extras.indexOf(x)<0)extras.push(x)});
-  extras.forEach(function(x){var a=A.extraFeatures.indexOf(x)>=0,b=B.extraFeatures.indexOf(x)>=0;r(esc(x),a?1:0,b?1:0,a?yes:no,b?yes:no,1)});
-  if(!FEATURES.some(function(f){return A.features[f[0]]||B.features[f[0]]})&&!extras.length)rows.push('<tr><td colspan="3" style="color:var(--muted)">Inga egenskaper ifyllda ännu.</td></tr>');
+  extras.forEach(function(x){feat(esc(x),A.extraFeatures.indexOf(x)>=0,B.extraFeatures.indexOf(x)>=0)});
+  if(!FEATURES.some(function(f){return A.features[f[0]]||B.features[f[0]]})&&!extras.length)rows.push({html:'<td colspan="4" style="color:var(--muted)">Inga egenskaper ifyllda ännu.</td>'});
 
   sec('Närhet');
   NEAR.forEach(function(n){
     var a=A.near[n[0]],b=B.near[n[0]];
     function f(h,v){var nm=h.nearNames[n[0]];return v==null?(nm?'<small>'+esc(nm)+'</small>':'–'):dist(v)+(nm?'<br><small>'+esc(nm)+'</small>':'')}
-    r(n[2]+' '+n[1],a,b,f(A,a),f(B,b),-1);
+    r(n[2]+' '+n[1],a,b,f(A,a),f(B,b),-1,'','',dist);
   });
   if(A.lat!=null&&B.lat!=null)r('Avstånd mellan bostäderna',null,null,dist(haversine(A.lat,A.lon,B.lat,B.lon)),'',0);
 
   if(A.notes||B.notes){sec('Anteckningar');r('Anteckningar',null,null,esc(A.notes).replace(/\n/g,'<br>'),esc(B.notes).replace(/\n/g,'<br>'),0)}
 
-  $('#cmp').innerHTML='<colgroup><col class="c1"><col><col></colgroup><thead><tr><th></th><th class="ha">A · '+esc(houseName(0))+'</th><th class="hb">B · '+esc(houseName(1))+'</th></tr></thead><tbody>'+rows.join('')+'</tbody>';
+  // en rubrikrad räknas som detalj när alla rader under den är detaljer
+  rows.forEach(function(x,k){if(!x.sec)return;var all=true;
+    for(var j=k+1;j<rows.length&&!rows[j].sec;j++)if(!rows[j].det){all=false;break}
+    x.det=all;});
+  var nDet=rows.filter(function(x){return x.det&&!x.sec}).length,showAll=!!state.open.cmpDet;
+  var t=$('#cmp');t.classList.toggle('all',showAll);
+  t.innerHTML='<colgroup><col class="c1"><col><col><col class="cd"></colgroup><thead><tr><th></th><th class="ha">A · '+esc(houseName(0))+'</th><th class="hb">B · '+esc(houseName(1))+'</th><th>Skillnad</th></tr></thead><tbody>'+
+    rows.map(function(x){return '<tr class="'+[x.sec?'sec':'',x.cls||'',x.det?'det':''].join(' ').trim()+'">'+x.html+'</tr>'}).join('')+'</tbody>';
+  var mb=$('#cmpMore');mb.textContent=showAll?'Visa bara det viktigaste':'Visa alla detaljer ('+nDet+' rader till)';
+  mb.parentNode.hidden=!nDet;
 }
 
 /* ---------- Geografi ---------- */
@@ -1761,6 +1902,7 @@ function bindGlobal(){
     if(b.dataset.zoom==='all'){lastFit='';updateMap()}else zoomHouse(+b.dataset.zoom)})});
   var cs=$('#cmpSec');if(state.open.cmp===false)cs.open=false;
   cs.addEventListener('toggle',function(){state.open.cmp=cs.open;save()});
+  $('#cmpMore').addEventListener('click',function(){state.open.cmpDet=!state.open.cmpDet;save();renderAll()});
   $$('#tabs button').forEach(function(b){b.addEventListener('click',function(){setTab(+b.dataset.i)})});
   // utskrift: jämförelsen fälls ut och kartan mäts om för pappersbredden
   $('#btnPrint').addEventListener('click',function(){window.print()});
