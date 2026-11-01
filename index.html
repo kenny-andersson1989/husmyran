@@ -840,7 +840,7 @@ var SECTIONS=[
      '<div class="field"><label>Hushållets nettoinkomst</label><div class="unit"><input data-g="income" data-num inputmode="decimal"><span>kr/mån</span></div><span class="hint">Efter skatt, alla vuxna</span></div>'+
      '<div class="field"><label>Övriga levnadskostnader</label><div class="unit"><input data-g="otherExp" data-num inputmode="decimal"><span>kr/mån</span></div><span class="hint">Allt utom boendet: mat, bil, barn, sparande m.m.</span></div>'+
      '<div class="field"><label>Stresstest: räntan stiger med</label><select data-g="stress">'+[1,2,3,4,5].map(function(v){return '<option value="'+v+'">'+v+' procentenhet'+(v>1?'er':'')+'</option>'}).join('')+'</select><span class="hint">Hur mycket mer det kostar om räntan blir så mycket högre – bankerna prövar också med högre ränta</span></div>'+
-     '</div><p class="hint" style="margin:10px 0 0">Kvar att leva på och stresstestet visas i översikten högst upp.</p>'}},
+     '</div><p class="hint" style="margin:10px 0 0">Kvar att leva på visas i översikten högst upp, stresstestet i jämförelsen längst ner.</p>'}},
   {id:'building',title:'🧱 Byggnad',body:function(i){return '<div class="g2">'+BUILDING.map(function(x){return fText('building.'+x[0],x[1])}).join('')+'</div>'}},
   {id:'features',title:'✨ Egenskaper',body:function(i){return '<div class="chips">'+
     FEATURES.map(function(f){return '<label class="chip"><input type="checkbox" data-feat="'+f[0]+'"><span>'+f[1]+'</span></label>'}).join('')+
@@ -1302,14 +1302,18 @@ function renderOverview(A,B,ca,cb){
     rows.push('<tr class="'+(cls||'')+'"><td>'+label+(sub?'<small>'+sub+'</small>':'')+'</td><td class="v">'+f(va,0)+'</td><td class="v">'+f(vb,1)+'</td><td>'+dv+'</td></tr>');
   }
   var val=function(k){return [ca.has?ca[k]:null,cb.has?cb[k]:null]};
-  var ded=A.deduction||B.deduction,sl=stressLabel();
+  var ded=A.deduction||B.deduction;
   // trafikljus: andel av nettoinkomsten som går till boendet
   var light=function(k){var c=cs[k];if(!inc||!c.has)return '';var p=c.total/inc*100;
     return '<br><span class="light '+(p<=30?'g':p<=40?'y':'r')+'">'+fmtNum(p,0)+' % av nettoinkomsten</span>'};
   var v=val('total');row('Att betala / mån','ränta, amortering, avgift, drift och övriga kostnader',v[0],v[1],-1,'total',light);
-  v=val('totalExAmort');row('varav boendekostnad','allt utom amorteringen'+(ded?', ränta efter avdrag':', ränta före avdrag'),v[0],v[1],-1);
-  v=val('amort');row('varav amortering','blir ett sparande i bostaden',v[0],v[1],-1);
-  v=val('stressTotal');row(sl.label,sl.sub,v[0],v[1],-1);
+  // att betala delat i ränta (med dagens räntesats), amortering och resten
+  var two=function(f){return [ca.has?f(ca):null,cb.has?f(cb):null]};
+  v=two(function(c){return c.interest-c.deduct});
+  row('varav ränta',ded?'efter ränteavdrag':'före ränteavdrag',v[0],v[1],-1,'',function(k){return '<small>'+fmtNum(cs[k].rate,2)+' % effektiv ränta</small>'});
+  v=val('amort');row('varav amortering','blir ett sparande i bostaden',v[0],v[1],-1,'',function(k){return '<small>'+fmtNum(cs[k].amortPct,1)+' % av lånet per år</small>'});
+  v=two(function(c){return c.rent+c.drift+c.fee+c.costs});
+  row('varav avgift, drift och övrigt','avgift/hyra, driftkostnad, fastighetsavgift och övriga kostnader',v[0],v[1],-1);
   if(inc){v=val('left');row('Kvar att leva på / mån','nettoinkomst minus att betala'+(state.g.otherExp?' och övriga levnadskostnader':''),v[0],v[1],1,'total')}
   else rows.push('<tr><td>Kvar att leva på</td><td colspan="3" class="hint">Fyll i hushållets nettoinkomst under Hushållets ekonomi</td></tr>');
   if(!A.current||!B.current){
