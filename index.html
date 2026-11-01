@@ -1069,7 +1069,7 @@ function renderOutputs(i){
   html+='<div class="rate-row"><span class="l"><span>Effektiv ränta '+fmtNum(c.rate,2)+' %</span>'+
       '<label class="toggle mini"><input type="checkbox" data-f="deduction"'+(h.deduction?' checked':'')+'><span class="sw"></span><span>Ränteavdrag 30 %</span></label></span>'+
     '<span class="r">'+(withDed?kr(c.interest-c.deduct)+'/mån<small>efter avdrag · '+kr(c.interest)+' före</small>':m(c.interest)+'<small>'+(c.interest?'före avdrag':'')+'</small>')+'</span></div>'+
-    row('Amortering '+fmtNum(c.amortPct,1)+' % (sparande)',m(c.amort))+
+    row('Amortering '+fmtNum(c.amortPct,1)+' %',m(c.amort))+
     // månadskostnaden och engångskostnadernas delar står i översikten och jämförelsen
     row('Kontanter vid köp',h.current?'Inget köp':(c.price?kr(c.cash):'–'),'tot');
   hq(i,'[data-o="calc"]').innerHTML=html;
@@ -1271,14 +1271,18 @@ function fundsLeft(i){
 function renderOverview(A,B,ca,cb){
   var ov=$('#overview');ov.hidden=!(ca.has||cb.has);if(ov.hidden)return;
   var cs=[ca,cb],inc=state.g.income;
-  // inledande mening: boendekostnaden skild från amorteringen, som är ett sparande
+  // inledande mening: det man faktiskt betalar varje månad, och hur mycket av skillnaden som är amortering
   var lead='';
   if(ca.has&&cb.has){
-    var d=cb.totalExAmort-ca.totalExAmort,da=cb.amort-ca.amort,cur=A.current!==B.current?(A.current?0:1):-1;
-    var pre=cur>=0?AB[1-cur]+' kostar <b>'+krR(Math.abs(cur?-d:d))+' '+((cur?-d:d)>0?'mer':'mindre')+'</b> per månad att bo i än din nuvarande bostad.'
-      :AB[d>0?0:1]+' är <b>'+krR(Math.abs(d))+' billigare</b> per månad att bo i.';
-    if(Math.abs(d)<50)pre='Båda kostar ungefär lika mycket per månad att bo i.';
-    var sub=Math.abs(da)>=100?'Dessutom amorterar du '+krR(Math.abs(da))+' mer i '+(da>0?'B':'A')+' – det är ett sparande, inte en kostnad. Att betala totalt skiljer '+krR(Math.abs(cb.total-ca.total))+' per månad.':'';
+    var d=cb.total-ca.total,da=cb.amort-ca.amort,cur=A.current!==B.current?(A.current?0:1):-1;
+    var pre=cur>=0?AB[1-cur]+' kostar <b>'+krR(Math.abs(cur?-d:d))+' '+((cur?-d:d)>0?'mer':'mindre')+'</b> att betala per månad än din nuvarande bostad.'
+      :AB[d>0?0:1]+' är <b>'+krR(Math.abs(d))+' billigare</b> att betala per månad.';
+    if(Math.abs(d)<50)pre='Båda kostar ungefär lika mycket att betala per månad.';
+    // amorteringsskillnaden i samma riktning som totalskillnaden är en del av den
+    var dx=d-da,sub='';
+    if(Math.abs(da)>=100)sub=da*d>0&&Math.abs(da)<Math.abs(d)?'Av skillnaden är '+krR(Math.abs(da))+' amortering, som blir ett sparande i bostaden.'
+      :'Amorteringen är '+krR(Math.abs(da))+' '+(da>0?'högre':'lägre')+' i B, och blir ett sparande i bostaden.'+
+       (Math.abs(dx)>=50?' Utan amorteringen är '+AB[dx>0?0:1]+' '+krR(Math.abs(dx))+' billigare.':'');
     lead=pre+(sub?'<small>'+sub+'</small>':'');
   }else lead='Fyll i båda bostäderna så jämförs de här.';
   $('#ovLead').innerHTML=lead;
@@ -1293,12 +1297,12 @@ function renderOverview(A,B,ca,cb){
   }
   var val=function(k){return [ca.has?ca[k]:null,cb.has?cb[k]:null]};
   var ded=A.deduction||B.deduction;
-  var v=val('totalExAmort');row('Boendekostnad / mån','ränta'+(ded?' efter avdrag':'')+', avgift, drift och övrigt',v[0],v[1],-1);
-  v=val('amort');row('Amortering / mån','sparande i bostaden',v[0],v[1],0);
   // trafikljus: andel av nettoinkomsten som går till boendet
   var light=function(k){var c=cs[k];if(!inc||!c.has)return '';var p=c.total/inc*100;
     return '<br><span class="light '+(p<=30?'g':p<=40?'y':'r')+'">'+fmtNum(p,0)+' % av inkomsten</span>'};
-  v=val('total');row('Att betala / mån','boendekostnad + amortering',v[0],v[1],-1,'total',light);
+  var v=val('total');row('Att betala / mån','allt som går ut varje månad',v[0],v[1],-1,'total',light);
+  v=val('totalExAmort');row('varav boendekostnad','ränta'+(ded?' efter avdrag':'')+', avgift, drift och övrigt',v[0],v[1],-1);
+  v=val('amort');row('varav amortering','blir ett sparande i bostaden',v[0],v[1],-1);
   v=val('stressTotal');row('Om räntan stiger '+fmtNum(state.g.stress)+' %-enheter','att betala per månad',v[0],v[1],-1);
   if(inc){v=val('left');row('Kvar att leva på / mån','nettoinkomst minus boende'+(state.g.otherExp?' och övriga utgifter':''),v[0],v[1],1,'total')}
   else rows.push('<tr><td>Kvar att leva på</td><td colspan="3" class="hint">Fyll i hushållets nettoinkomst under Hushållets ekonomi</td></tr>');
@@ -1309,7 +1313,7 @@ function renderOverview(A,B,ca,cb){
   }
   $('#ovTable').innerHTML='<colgroup><col class="c1"><col><col><col style="width:17%"></colgroup><thead><tr><th></th><th class="ha">A</th><th class="hb">B</th><th>Skillnad</th></tr></thead><tbody>'+rows.join('')+'</tbody>';
   // stapel per bostad med månadskostnadens delar, i samma skala
-  var parts=[['int','Ränta',function(c){return c.interest-c.deduct}],['amort','Amortering (sparande)',function(c){return c.amort}],['rent','Avgift/hyra',function(c){return c.rent}],
+  var parts=[['int','Ränta',function(c){return c.interest-c.deduct}],['amort','Amortering',function(c){return c.amort}],['rent','Avgift/hyra',function(c){return c.rent}],
     ['drift','Drift',function(c){return c.drift}],['fee','Fastighetsavgift',function(c){return c.fee}],['costs','Övrigt',function(c){return c.costs}]];
   var max=Math.max(ca.has?ca.total:0,cb.has?cb.total:0)||1;
   $('#ovBars').innerHTML='<h3>Vart pengarna går varje månad</h3>'+[0,1].map(function(k){var c=cs[k];
@@ -1383,9 +1387,9 @@ function renderCompare(A,B,ca,cb){
 
   sec('Ekonomi per månad');
   var ded=A.deduction===B.deduction?(A.deduction?'efter ränteavdrag':'före ränteavdrag'):'A '+(A.deduction?'efter':'före')+', B '+(B.deduction?'efter':'före')+' ränteavdrag';
-  rk('Boendekostnad',has(ca,ca.totalExAmort),has(cb,cb.totalExAmort),-1,'','ränta, avgift, drift och övrigt – '+ded);
-  r('Amortering',has(ca,ca.amort),has(cb,cb.amort),ca.has?kr(ca.amort)+'<br><small>'+fmtNum(ca.amortPct,1)+' %/år</small>':'–',cb.has?kr(cb.amort)+'<br><small>'+fmtNum(cb.amortPct,1)+' %/år</small>':'–',0,'','ett sparande, inte en kostnad',kr);
-  rk('Att betala per månad',has(ca,ca.total),has(cb,cb.total),-1,'total','boendekostnad + amortering');
+  rk('Att betala per månad',has(ca,ca.total),has(cb,cb.total),-1,'total','allt som går ut varje månad');
+  rk('varav boendekostnad',has(ca,ca.totalExAmort),has(cb,cb.totalExAmort),-1,'','ränta, avgift, drift och övrigt – '+ded);
+  r('varav amortering',has(ca,ca.amort),has(cb,cb.amort),ca.has?kr(ca.amort)+'<br><small>'+fmtNum(ca.amortPct,1)+' %/år</small>':'–',cb.has?kr(cb.amort)+'<br><small>'+fmtNum(cb.amortPct,1)+' %/år</small>':'–',-1,'','blir ett sparande i bostaden',kr);
   rk('Om räntan stiger '+fmtNum(state.g.stress)+' %-enheter',has(ca,ca.stressTotal),has(cb,cb.stressTotal),-1,'','stresstest, att betala per månad');
   if(state.g.income)rk('Kvar att leva på',has(ca,ca.left),has(cb,cb.left),1,'total','nettoinkomst minus boende och övriga utgifter');
   DET=true;
