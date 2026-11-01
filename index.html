@@ -1265,10 +1265,11 @@ function krR(n){
   return (Math.round(n/(Math.abs(n)>=1000?100:10))*(Math.abs(n)>=1000?100:10)).toLocaleString('sv-SE')+' kr';
 }
 var AB=['<span class="a-c">A</span>','<span class="b-c">B</span>'];
+// stresstestets rad: räntan man prövar med, t.ex. "Om räntan blir 4,67 %" med dagens ränta under
+function stressLabel(){var a=state.houses[0].rate||0,b=state.houses[1].rate||0,st=state.g.stress||0;
+  return a===b?{label:'Om räntan blir '+fmtNum(a+st,2)+' %',sub:'i dag '+fmtNum(a,2)+' % · att betala per månad'}
+    :{label:'Om räntan blir A '+fmtNum(a+st,2)+' %, B '+fmtNum(b+st,2)+' %',sub:'i dag A '+fmtNum(a,2)+' %, B '+fmtNum(b,2)+' % · att betala per månad'}}
 // pengar som blir över (eller saknas) när en bostad köps med pengarna från den nuvarande
-// stresstestets ränta, t.ex. "2,67 → 4,67 %"
-function stressRateTxt(){var a=state.houses[0].rate||0,b=state.houses[1].rate||0,st=state.g.stress||0;
-  return a===b?fmtNum(a,2)+" → "+fmtNum(a+st,2)+" %":"A "+fmtNum(a+st,2)+" %, B "+fmtNum(b+st,2)+" %"}
 function fundsLeft(i){
   var h=state.houses[i],o=state.houses[1-i];if(h.current||!o.current)return null;
   var c=calc(h),os=calc(o).sale;return c.price&&os?os.net-c.cash:null;
@@ -1301,14 +1302,14 @@ function renderOverview(A,B,ca,cb){
     rows.push('<tr class="'+(cls||'')+'"><td>'+label+(sub?'<small>'+sub+'</small>':'')+'</td><td class="v">'+f(va,0)+'</td><td class="v">'+f(vb,1)+'</td><td>'+dv+'</td></tr>');
   }
   var val=function(k){return [ca.has?ca[k]:null,cb.has?cb[k]:null]};
-  var ded=A.deduction||B.deduction,rateTxt=stressRateTxt();
+  var ded=A.deduction||B.deduction,sl=stressLabel();
   // trafikljus: andel av nettoinkomsten som går till boendet
   var light=function(k){var c=cs[k];if(!inc||!c.has)return '';var p=c.total/inc*100;
     return '<br><span class="light '+(p<=30?'g':p<=40?'y':'r')+'">'+fmtNum(p,0)+' % av nettoinkomsten</span>'};
   var v=val('total');row('Att betala / mån','ränta, amortering, avgift, drift och övriga kostnader',v[0],v[1],-1,'total',light);
   v=val('totalExAmort');row('varav boendekostnad','allt utom amorteringen'+(ded?', ränta efter avdrag':', ränta före avdrag'),v[0],v[1],-1);
   v=val('amort');row('varav amortering','blir ett sparande i bostaden',v[0],v[1],-1);
-  v=val('stressTotal');row('Om räntan stiger '+fmtNum(state.g.stress)+' %-enheter','att betala per månad, räntan '+rateTxt,v[0],v[1],-1);
+  v=val('stressTotal');row(sl.label,sl.sub,v[0],v[1],-1);
   if(inc){v=val('left');row('Kvar att leva på / mån','nettoinkomst minus att betala'+(state.g.otherExp?' och övriga levnadskostnader':''),v[0],v[1],1,'total')}
   else rows.push('<tr><td>Kvar att leva på</td><td colspan="3" class="hint">Fyll i hushållets nettoinkomst under Hushållets ekonomi</td></tr>');
   if(!A.current||!B.current){
@@ -1335,6 +1336,9 @@ function renderSecResults(A,B,ca,cb){
   set('loan',ca.has||cb.has?'Att betala '+pair(ca.has?krR(ca.total):null,cb.has?krR(cb.total):null)+' /mån':'');
   var cur=A.current?0:B.current?1:-1,s=cur>=0?[ca,cb][cur].sale:null;
   set('sale',s?'Kvar efter försäljning '+krR(s.net):'');
+  // stresstestets val visar räntan man hamnar på när båda bostäderna har samma ränta
+  var sel=$('[data-g="stress"]'),ra=A.rate||0,rb=B.rate||0;
+  if(sel)$$('option',sel).forEach(function(o){var v=+o.value;o.textContent=v+' procentenhet'+(v>1?'er':'')+(ra===rb?' – till '+fmtNum(ra+v,2)+' %':'')});
   set('budget',state.g.income&&(ca.has||cb.has)?'Kvar att leva på '+pair(ca.has?krR(ca.left):null,cb.has?krR(cb.left):null):'');
 }
 function renderCompare(A,B,ca,cb){
@@ -1382,12 +1386,12 @@ function renderCompare(A,B,ca,cb){
   DET=false;
 
   sec('Ekonomi per månad');
-  var rateTxt=stressRateTxt();
+  var sl=stressLabel();
   var ded=A.deduction===B.deduction?(A.deduction?'efter ränteavdrag':'före ränteavdrag'):'A '+(A.deduction?'efter':'före')+', B '+(B.deduction?'efter':'före')+' ränteavdrag';
   rk('Att betala per månad',has(ca,ca.total),has(cb,cb.total),-1,'total','ränta, amortering, avgift, drift och övriga kostnader');
   rk('varav boendekostnad',has(ca,ca.totalExAmort),has(cb,cb.totalExAmort),-1,'','allt utom amorteringen – '+ded);
   r('varav amortering',has(ca,ca.amort),has(cb,cb.amort),ca.has?kr(ca.amort)+'<br><small>'+fmtNum(ca.amortPct,1)+' %/år</small>':'–',cb.has?kr(cb.amort)+'<br><small>'+fmtNum(cb.amortPct,1)+' %/år</small>':'–',-1,'','blir ett sparande i bostaden',kr);
-  rk('Om räntan stiger '+fmtNum(state.g.stress)+' %-enheter',has(ca,ca.stressTotal),has(cb,cb.stressTotal),-1,'','stresstest, att betala per månad, räntan '+rateTxt);
+  rk(sl.label,has(ca,ca.stressTotal),has(cb,cb.stressTotal),-1,'','stresstest – '+sl.sub);
   if(state.g.income)rk('Kvar att leva på',has(ca,ca.left),has(cb,cb.left),1,'total','nettoinkomst minus att betala och övriga levnadskostnader');
   DET=true;
   r(A.current||B.current?'Pris / värde':'Pris',ca.price||null,cb.price||null,ca.price?kr(ca.price):'–',cb.price?kr(cb.price):'–',A.current||B.current?0:-1,'','',kr);
