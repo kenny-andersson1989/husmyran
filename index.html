@@ -1317,9 +1317,19 @@ function renderOverview(A,B,ca,cb){
   if(inc){v=val('left');row('Kvar att leva på / mån','nettoinkomst minus att betala'+(state.g.otherExp?' och övriga levnadskostnader':''),v[0],v[1],1,'total')}
   else rows.push('<tr><td>Kvar att leva på</td><td colspan="3" class="hint">Fyll i hushållets nettoinkomst under Hushållets ekonomi</td></tr>');
   if(!A.current||!B.current){
-    var cash=[A.current?null:ca.cash,B.current?null:cb.cash];
-    var fl=[fundsLeft(0),fundsLeft(1)],flTxt=function(k){var x=fl[k];return x==null?'':'<br><small>'+(x>=0?krR(x)+' över av försäljningspengarna':krR(-x)+' mer än försäljningen ger')+'</small>'};
-    rows.push('<tr><td>Kontanter vid köp<small>insats, extra insats, lagfart och pantbrev</small></td><td class="v">'+(cash[0]==null?'–':krR(cash[0])+flTxt(0))+'</td><td class="v">'+(cash[1]==null?'–':krR(cash[1])+flTxt(1))+'</td><td></td></tr>');
+    // nuvarande bostad: pengarna som blir kvar när den säljs; annonsbostad: kontanterna som behövs vid köpet
+    var hs=[A,B],money=[0,1].map(function(k){var h=hs[k],c=cs[k];
+      return h.current?(c.sale?c.sale.net:null):(c.price?c.cash:null)});
+    var note=function(k){return '<small>'+(hs[k].current?'kvar när den säljs':'behövs vid köpet')+'</small>'};
+    var cell=function(k){return money[k]==null?'<span class="hint">'+(hs[k].current?'Fyll i värde och lån':'Fyll i pris')+'</span>':krR(money[k])+note(k)};
+    var swap=A.current!==B.current,cur=A.current?0:1,dv='';
+    if(swap&&money[0]!=null&&money[1]!=null){var left=money[cur]-money[1-cur];
+      dv='<span class="dv '+(left>=0?'good':'bad')+'">'+krR(Math.abs(left))+(left>=0?' över':' saknas')+'</span>'}
+    else if(!swap&&money[0]!=null&&money[1]!=null&&Math.abs(money[1]-money[0])>=1){var d=money[1]-money[0];
+      dv='<span class="dv '+(d>0?'bad':'good')+'">'+(d>0?'+':'−')+krR(Math.abs(d))+'</span>'}
+    var lab=swap?'Pengar vid flytten<small>'+AB[cur]+': kvar efter lån, mäklararvode och skatt · '+AB[1-cur]+': insats, extra insats, lagfart och pantbrev</small>'
+      :'Kontanter vid köp<small>insats, extra insats, lagfart och pantbrev</small>';
+    rows.push('<tr><td>'+lab+'</td><td class="v">'+cell(0)+'</td><td class="v">'+cell(1)+'</td><td>'+dv+'</td></tr>');
   }
   $('#ovTable').innerHTML='<colgroup><col class="c1"><col><col><col style="width:17%"></colgroup><thead><tr><th></th><th class="ha">A</th><th class="hb">B</th><th>Skillnad</th></tr></thead><tbody>'+rows.join('')+'</tbody>';
   // stapel per bostad med månadskostnadens delar, i samma skala
