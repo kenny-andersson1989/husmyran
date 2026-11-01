@@ -330,17 +330,13 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
 
   <section id="app">
     <div class="heads" id="heads"></div>
-    <!-- översikten och jämförelsen först, därefter det man fyller i och sist kartan -->
+    <!-- svaret först (översikten), sedan det man fyller i i den ordning man gör det,
+         kartan efter Närhet och sist hela jämförelsen -->
     <div class="card ov" id="overview" hidden>
       <p class="ov-lead" id="ovLead"></p>
       <table class="ov-t" id="ovTable"></table>
       <div class="ov-bars" id="ovBars"></div>
     </div>
-    <details class="card sec" id="cmpSec" open>
-      <summary><span class="sec-t">📊 Jämförelse <small style="font-size:13px;font-weight:600;color:var(--muted)">– skillnaden visar B jämfört med A</small></span></summary>
-      <div class="cmp-wrap" style="border-top:1px solid var(--line)"><table class="cmp" id="cmp"></table></div>
-      <div class="cmp-more"><button class="btn small" type="button" id="cmpMore"></button></div>
-    </details>
     <div class="tabs" id="tabs" style="margin-top:14px">
       <button type="button" data-i="0" class="on">A</button>
       <button type="button" data-i="1">B</button>
@@ -348,7 +344,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
     <div id="sections"></div>
   </section>
 
-  <!-- kartan sist, direkt efter Närhet -->
+  <!-- kartan direkt efter Närhet -->
   <section class="card">
     <h2>🗺️ Karta</h2>
     <div class="map-tools">
@@ -363,6 +359,15 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
     </div>
     <div id="map"></div>
     <p class="map-note" id="mapNote">Ringens färg visar vilken bostad platsen hör till (blå = A, orange = B). Klicka på en ikon för namn och avstånd. Du kan dra bostadsmarkörerna om läget inte stämmer.</p>
+  </section>
+
+  <!-- hela jämförelsen sist; visas när någon bostad är ifylld -->
+  <section>
+    <details class="card sec" id="cmpSec" open hidden style="margin-top:0">
+      <summary><span class="sec-t">📊 Jämförelse <small style="font-size:13px;font-weight:600;color:var(--muted)">– skillnaden visar B jämfört med A</small></span></summary>
+      <div class="cmp-wrap" style="border-top:1px solid var(--line)"><table class="cmp" id="cmp"></table></div>
+      <div class="cmp-more"><button class="btn small" type="button" id="cmpMore"></button></div>
+    </details>
   </section>
 
 </main>
@@ -1247,6 +1252,8 @@ function renderAll(){
   $$('#tabs button').forEach(function(b){var i=+b.dataset.i;b.textContent=letter(i)+' · '+(state.houses[i].current?'Nuvarande':'Bostad '+letter(i))});
   renderOverview(A,B,ca,cb);
   renderSecResults(A,B,ca,cb);
+  // en tom jämförelse är bara streck – den visas när något är ifyllt
+  $('#cmpSec').hidden=!(ca.has||cb.has);
   renderCompare(A,B,ca,cb);
   updateMap();
 }
@@ -1353,6 +1360,24 @@ function renderCompare(A,B,ca,cb){
   var cur=function(h){return h.current};
   var has=function(c,v){return c.has?v:null};
 
+  // samma ordning som formulären: bostaden, ekonomin, köpet, över tid, byggnad, egenskaper, restid och närhet
+  sec('Bostaden');
+  r('Boarea',A.living,B.living,unit(A.living,'m²'),unit(B.living,'m²'),1,'','',du('m²'));
+  r('Rum',A.rooms,B.rooms,A.rooms?fmtNum(A.rooms,1):'–',B.rooms?fmtNum(B.rooms,1):'–',1,'','',du('',1));
+  if(any(A.plot,B.plot))r('Tomtarea',A.plot,B.plot,unit(A.plot,'m²',0),unit(B.plot,'m²',0),1,'','',du('m²',0));
+  r('Byggår',A.year,B.year,A.year||'–',B.year||'–',1,'','',du('år',0));
+  var eA=A.energyClass?ENERGY.indexOf(A.energyClass):null,eB=B.energyClass?ENERGY.indexOf(B.energyClass):null;
+  r('Energiklass',eA,eB,esc(A.energyClass||'–'),esc(B.energyClass||'–'),-1);
+  DET=true;
+  r('Typ',null,null,esc(A.type),esc(B.type),0);
+  r('Upplåtelseform',null,null,esc(A.tenure),esc(B.tenure),0);
+  txt('Område',A.area,B.area);
+  if(any(A.extraArea,B.extraArea))r('Biarea',A.extraArea,B.extraArea,unit(A.extraArea,'m²'),unit(B.extraArea,'m²'),1,'','',du('m²'));
+  if(any(A.bedrooms,B.bedrooms))r('Varav sovrum',A.bedrooms,B.bedrooms,A.bedrooms||'–',B.bedrooms||'–',1,'','',du('',0));
+  txt('Våning',A.floor,B.floor);
+  r('Uppvärmning',null,null,esc(A.heating||'–')+(A.heatingNote?'<br><small>'+esc(A.heatingNote)+'</small>':''),esc(B.heating||'–')+(B.heatingNote?'<br><small>'+esc(B.heatingNote)+'</small>':''),0);
+  DET=false;
+
   sec('Ekonomi per månad');
   var ded=A.deduction===B.deduction?(A.deduction?'efter ränteavdrag':'före ränteavdrag'):'A '+(A.deduction?'efter':'före')+', B '+(B.deduction?'efter':'före')+' ränteavdrag';
   rk('Att betala per månad',has(ca,ca.total),has(cb,cb.total),-1,'total','allt som går ut varje månad');
@@ -1375,13 +1400,16 @@ function renderCompare(A,B,ca,cb){
   COSTS.forEach(function(x){var a=monthly(A,'costs.'+x[0]),b=monthly(B,'costs.'+x[0]);if(any(a,b))rm(x[1],a,b,-1)});
   DET=false;
 
-  sec('Över tid');
-  rk('Kostnad 10 år',has(ca,overTime(ca,10)),has(cb,overTime(cb,10)),-1,'','utan amortering, med köpets engångskostnader');
-  if(ca.sale||cb.sale)r('Pengar kvar efter försäljning',null,null,ca.sale?kr(ca.sale.net):'–',cb.sale?kr(cb.sale.net):'–',0,'','nuvarande bostad');
-  DET=true;
-  rk('Kostnad 5 år',has(ca,overTime(ca,5)),has(cb,overTime(cb,5)),-1);
-  r('Amorterat på 10 år',has(ca,ca.amort*120),has(cb,cb.amort*120),ca.has?kr(ca.amort*120):'–',cb.has?kr(cb.amort*120):'–',0,'','sparat i bostaden',kr);
-  DET=false;
+  var anyDrift=DRIFT_ITEMS.some(function(x){return any(A.driftItems[x[0]],B.driftItems[x[0]])})||any(A.kwh,B.kwh);
+  if(anyDrift){
+    DET=true;
+    sec('Driftkostnad – fördelning');
+    DRIFT_ITEMS.forEach(function(x){var a=monthly(A,'driftItems.'+x[0]),b=monthly(B,'driftItems.'+x[0]);if(any(a,b))rm(x[1],a,b,-1)});
+    var ya=driftItemsMonthly(A),yb=driftItemsMonthly(B);if(ya!=null||yb!=null)rm('Summa',ya,yb,-1);
+    if(any(A.kwh,B.kwh))r('Elförbrukning',A.kwh,B.kwh,unit(A.kwh,'kWh/år',0),unit(B.kwh,'kWh/år',0),-1,'','',du('kWh',0));
+    if(any(A.household,B.household))r('Antal i hushållet',null,null,A.household||'–',B.household||'–',0);
+    DET=false;
+  }
 
   if(!cur(A)||!cur(B)){
     sec('Vid köp (engångskostnader)');
@@ -1397,44 +1425,12 @@ function renderCompare(A,B,ca,cb){
     DET=false;
   }
 
-  var anyDrift=DRIFT_ITEMS.some(function(x){return any(A.driftItems[x[0]],B.driftItems[x[0]])})||any(A.kwh,B.kwh);
-  if(anyDrift){
-    DET=true;
-    sec('Driftkostnad – fördelning');
-    DRIFT_ITEMS.forEach(function(x){var a=monthly(A,'driftItems.'+x[0]),b=monthly(B,'driftItems.'+x[0]);if(any(a,b))rm(x[1],a,b,-1)});
-    var ya=driftItemsMonthly(A),yb=driftItemsMonthly(B);if(ya!=null||yb!=null)rm('Summa',ya,yb,-1);
-    if(any(A.kwh,B.kwh))r('Elförbrukning',A.kwh,B.kwh,unit(A.kwh,'kWh/år',0),unit(B.kwh,'kWh/år',0),-1,'','',du('kWh',0));
-    if(any(A.household,B.household))r('Antal i hushållet',null,null,A.household||'–',B.household||'–',0);
-    DET=false;
-  }
-
-  if(state.g.work){
-    var maxKm={car:1e9,bike:50,foot:15};
-    var tt=function(h,m){var t=h.travel&&h.travel[m];return t&&t.km<=maxKm[m]?t.min:null};
-    var tf=function(h,m){var t=h.travel&&h.travel[m];return !t?'–':t.km>maxKm[m]?'För långt':fmtMin(t.min)+'<br><small>'+fmtNum(t.km,1)+' km</small>'};
-    sec('Restid till '+esc(state.g.work.label));
-    r('🚗 Bil',tt(A,'car'),tt(B,'car'),tf(A,'car'),tf(B,'car'),-1,'','',fmtMin);
-    DET=true;
-    r('🚲 Cykel',tt(A,'bike'),tt(B,'bike'),tf(A,'bike'),tf(B,'bike'),-1,'','',fmtMin);
-    r('🚶 Gång',tt(A,'foot'),tt(B,'foot'),tf(A,'foot'),tf(B,'foot'),-1,'','',fmtMin);
-    DET=false;
-  }
-
-  sec('Bostaden');
-  r('Boarea',A.living,B.living,unit(A.living,'m²'),unit(B.living,'m²'),1,'','',du('m²'));
-  r('Rum',A.rooms,B.rooms,A.rooms?fmtNum(A.rooms,1):'–',B.rooms?fmtNum(B.rooms,1):'–',1,'','',du('',1));
-  if(any(A.plot,B.plot))r('Tomtarea',A.plot,B.plot,unit(A.plot,'m²',0),unit(B.plot,'m²',0),1,'','',du('m²',0));
-  r('Byggår',A.year,B.year,A.year||'–',B.year||'–',1,'','',du('år',0));
-  var eA=A.energyClass?ENERGY.indexOf(A.energyClass):null,eB=B.energyClass?ENERGY.indexOf(B.energyClass):null;
-  r('Energiklass',eA,eB,esc(A.energyClass||'–'),esc(B.energyClass||'–'),-1);
+  sec('Över tid');
+  rk('Kostnad 10 år',has(ca,overTime(ca,10)),has(cb,overTime(cb,10)),-1,'','utan amortering, med köpets engångskostnader');
+  if(ca.sale||cb.sale)r('Pengar kvar efter försäljning',null,null,ca.sale?kr(ca.sale.net):'–',cb.sale?kr(cb.sale.net):'–',0,'','nuvarande bostad');
   DET=true;
-  r('Typ',null,null,esc(A.type),esc(B.type),0);
-  r('Upplåtelseform',null,null,esc(A.tenure),esc(B.tenure),0);
-  txt('Område',A.area,B.area);
-  if(any(A.extraArea,B.extraArea))r('Biarea',A.extraArea,B.extraArea,unit(A.extraArea,'m²'),unit(B.extraArea,'m²'),1,'','',du('m²'));
-  if(any(A.bedrooms,B.bedrooms))r('Varav sovrum',A.bedrooms,B.bedrooms,A.bedrooms||'–',B.bedrooms||'–',1,'','',du('',0));
-  txt('Våning',A.floor,B.floor);
-  r('Uppvärmning',null,null,esc(A.heating||'–')+(A.heatingNote?'<br><small>'+esc(A.heatingNote)+'</small>':''),esc(B.heating||'–')+(B.heatingNote?'<br><small>'+esc(B.heatingNote)+'</small>':''),0);
+  rk('Kostnad 5 år',has(ca,overTime(ca,5)),has(cb,overTime(cb,5)),-1);
+  r('Amorterat på 10 år',has(ca,ca.amort*120),has(cb,cb.amort*120),ca.has?kr(ca.amort*120):'–',cb.has?kr(cb.amort*120):'–',0,'','sparat i bostaden',kr);
   DET=false;
 
   if(BUILDING.some(function(x){return any(A.building[x[0]],B.building[x[0]])})){
@@ -1452,6 +1448,18 @@ function renderCompare(A,B,ca,cb){
   var extras=[];A.extraFeatures.concat(B.extraFeatures).forEach(function(x){if(extras.indexOf(x)<0)extras.push(x)});
   extras.forEach(function(x){feat(esc(x),A.extraFeatures.indexOf(x)>=0,B.extraFeatures.indexOf(x)>=0)});
   if(!FEATURES.some(function(f){return A.features[f[0]]||B.features[f[0]]})&&!extras.length)rows.push({html:'<td colspan="4" style="color:var(--muted)">Inga egenskaper ifyllda ännu.</td>'});
+
+  if(state.g.work){
+    var maxKm={car:1e9,bike:50,foot:15};
+    var tt=function(h,m){var t=h.travel&&h.travel[m];return t&&t.km<=maxKm[m]?t.min:null};
+    var tf=function(h,m){var t=h.travel&&h.travel[m];return !t?'–':t.km>maxKm[m]?'För långt':fmtMin(t.min)+'<br><small>'+fmtNum(t.km,1)+' km</small>'};
+    sec('Restid till '+esc(state.g.work.label));
+    r('🚗 Bil',tt(A,'car'),tt(B,'car'),tf(A,'car'),tf(B,'car'),-1,'','',fmtMin);
+    DET=true;
+    r('🚲 Cykel',tt(A,'bike'),tt(B,'bike'),tf(A,'bike'),tf(B,'bike'),-1,'','',fmtMin);
+    r('🚶 Gång',tt(A,'foot'),tt(B,'foot'),tf(A,'foot'),tf(B,'foot'),-1,'','',fmtMin);
+    DET=false;
+  }
 
   sec('Närhet');
   NEAR.forEach(function(n){
