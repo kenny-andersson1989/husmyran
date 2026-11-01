@@ -199,10 +199,6 @@ details.split[open]>summary{margin-bottom:10px}
 /* Jämförelse */
 /* overflow:clip i stället för hidden så att tabellhuvudet kan stå kvar när man scrollar */
 .cmp-wrap{padding:0;overflow:clip}
-.diff-sum{padding:14px 18px;border-top:1px solid var(--line);background:#fafcfd}
-.diff-sum h3{margin:0 0 6px}
-.diff-sum ul{margin:0;padding-left:20px}
-.diff-sum li{margin:3px 0}
 table.cmp{width:100%;border-collapse:collapse;font-size:14.5px;table-layout:fixed}
 table.cmp col.c1{width:31%} table.cmp col.cd{width:17%}
 /* detaljrader visas först när man ber om dem */
@@ -342,7 +338,6 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
     </div>
     <details class="card sec" id="cmpSec" open>
       <summary><span class="sec-t">📊 Jämförelse <small style="font-size:13px;font-weight:600;color:var(--muted)">– skillnaden visar B jämfört med A</small></span></summary>
-      <div class="diff-sum" id="diffSum"></div>
       <div class="cmp-wrap" style="border-top:1px solid var(--line)"><table class="cmp" id="cmp"></table></div>
       <div class="cmp-more"><button class="btn small" type="button" id="cmpMore"></button></div>
     </details>
@@ -1332,34 +1327,7 @@ function renderSecResults(A,B,ca,cb){
   set('sale',s?'Kvar efter försäljning '+krR(s.net):'');
   set('budget',state.g.income&&(ca.has||cb.has)?'Kvar att leva på '+pair(ca.has?krR(ca.left):null,cb.has?krR(cb.left):null):'');
 }
-
-// kort lista med de viktigaste skillnaderna, överst i jämförelsen
-function renderDiffSummary(A,B,ca,cb){
-  var nA='<span class="a-c">A</span>',nB='<span class="b-c">B</span>',out=[];
-  function who(d){return d>0?nB:nA}
-  // månadskostnaden står redan i översikten – här bara skillnaden över tid
-  if(ca.has&&cb.has){var d10=overTime(cb,10)-overTime(ca,10);if(Math.abs(d10)>=1)out.push('På 10 år skiljer det <b>'+kr(Math.abs(d10))+'</b> till '+who(-d10)+':s fördel')}
-  if(ca.price&&cb.price&&!A.current&&!B.current){var dp=cb.price-ca.price;if(dp)out.push(who(-dp)+' är <b>'+kr(Math.abs(dp))+'</b> billigare att köpa')}
-  // who(x): x>0 pekar ut B – "större hos B" = B−A, "närmare/kortare hos B" = A−B
-  if(A.living&&B.living&&A.living!==B.living)out.push(who(B.living-A.living)+' har <b>'+fmtNum(Math.abs(A.living-B.living),1)+' m²</b> större boarea');
-  if(A.rooms&&B.rooms&&A.rooms!==B.rooms)out.push(who(B.rooms-A.rooms)+' har <b>'+fmtNum(Math.abs(A.rooms-B.rooms),1)+'</b> rum fler');
-  if(A.plot&&B.plot&&Math.abs(A.plot-B.plot)>=50)out.push(who(B.plot-A.plot)+' har <b>'+fmtNum(Math.abs(A.plot-B.plot))+' m²</b> större tomt');
-  [['school','grundskolan'],['preschool','förskolan'],['grocery','matbutiken'],['transit','kollektivtrafiken'],['lake','sjön']].forEach(function(n){
-    var a=A.near[n[0]],b=B.near[n[0]];if(a==null||b==null||Math.abs(a-b)<150)return;
-    out.push(who(a-b)+' har <b>'+dist(Math.abs(a-b))+'</b> närmare till '+n[1]);
-  });
-  var tA=A.travel&&A.travel.car,tB=B.travel&&B.travel.car;
-  if(state.g.work&&tA&&tB&&Math.abs(tA.min-tB.min)>=3)out.push(who(tA.min-tB.min)+' har <b>'+Math.abs(tA.min-tB.min)+' min</b> kortare bilresa till '+esc(state.g.work.label));
-  var eA=A.energyClass?ENERGY.indexOf(A.energyClass):null,eB=B.energyClass?ENERGY.indexOf(B.energyClass):null;
-  if(eA!=null&&eB!=null&&eA!==eB)out.push(who(eA-eB)+' har bättre energiklass ('+esc(eA<eB?A.energyClass:B.energyClass)+' mot '+esc(eA<eB?B.energyClass:A.energyClass)+')');
-  var only=function(x,y){return FEATURES.filter(function(f){return x.features[f[0]]&&!y.features[f[0]]}).map(function(f){return f[1].toLowerCase()})};
-  var oa=only(A,B),ob=only(B,A);
-  if(oa.length)out.push('Bara '+nA+' har '+oa.slice(0,5).join(', '));
-  if(ob.length)out.push('Bara '+nB+' har '+ob.slice(0,5).join(', '));
-  $('#diffSum').innerHTML=out.length?'<h3>Viktigaste skillnaderna</h3><ul>'+out.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>':'<span class="hint">Fyll i båda bostäderna så visas de viktigaste skillnaderna här.</span>';
-}
 function renderCompare(A,B,ca,cb){
-  renderDiffSummary(A,B,ca,cb);
   // varje rad: {html, det, sec} – detaljrader döljs tills man ber om dem
   var rows=[],DET=false;
   function sec(t){rows.push({sec:true,html:'<td colspan="4">'+t+'</td>'})}
