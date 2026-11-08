@@ -896,17 +896,15 @@ var SECTIONS=[
       '<p class="hint full" style="margin:0">Välj mån eller år vid varje belopp.</p>'+
       fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra')+
       fMoney('propertyFee','Fastighetsavgift','<span data-o="feeHint"></span>')+
-      // driftkostnaden som ett belopp; delarna fälls ut vid behov
-      '<div data-o="driftEdit" style="display:contents">'+fMoney('driftItems.other','Driftkostnad totalt','Hela beloppet – eller dela upp det nedan')+'</div>'+
-      '<div class="field" data-o="driftSumBox"><label>Driftkostnad totalt</label><div class="drift-sum" data-o="driftSum"></div><span class="hint">Summan av delarna nedan, med övriga kostnader</span></div>'+
-      '<details class="fold full"><summary>Dela upp driftkostnaden<span class="fold-res">el, värme, vatten, bredband …</span></summary><div class="g2">'+
-        // elkostnad och elförbrukning bredvid varandra
-        fMoney('driftItems.el','El',DRIFT_HINTS.el)+
-        '<div class="field"><label>Elförbrukning</label><div class="unit"><input data-f="kwh" data-num inputmode="decimal"><span>kWh/år</span></div><span class="hint" data-o="kwhHint"></span></div>'+
-        DRIFT_ITEMS.filter(function(x){return x[0]!=='el'}).map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
-        '<div class="subhead sub">Övriga kostnader</div>'+
-        COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
-      '</div></details>'+
+      // driftkostnadens delar direkt i avsnittet, summan längst ner
+      '<div class="subhead sub">Drift</div>'+
+      // elkostnad och elförbrukning bredvid varandra
+      fMoney('driftItems.el','El',DRIFT_HINTS.el)+
+      '<div class="field"><label>Elförbrukning</label><div class="unit"><input data-f="kwh" data-num inputmode="decimal"><span>kWh/år</span></div><span class="hint" data-o="kwhHint"></span></div>'+
+      DRIFT_ITEMS.filter(function(x){return x[0]!=='el'}).map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
+      '<div class="subhead sub">Övriga kostnader</div>'+
+      COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
+      '<div class="field full"><label>Driftkostnad totalt</label><div class="drift-sum" data-o="driftSum"></div><span class="hint">Drift och övriga kostnader ovan – avgift och fastighetsavgift ingår inte</span></div>'+
     '</div></details>'+
     // 5. summeringen i en ihopfällbar del; att betala per månad syns i rubriken
     '<details class="fold full"><summary>Summering<span class="fold-res" data-o="sumRes"></span></summary><div class="fold-body" data-o="calc"></div></details>'+
@@ -1108,9 +1106,7 @@ function renderOutputs(i){
   var amortInp=hq(i,'[data-f="amortPct"]');amortInp.disabled=h.amortMode!=='manual';
   if(h.amortMode!=='manual'){amortInp.value='';amortInp.placeholder=fmtNum(c.autoAmort)+' (automatiskt)'}
   // elpris per kWh när både kostnad och förbrukning finns
-  // driftkostnaden: ett eget totalbelopp (sparas som "Övrigt") tills den delas upp – då visas summan
-  var split=DRIFT_ITEMS.some(function(x){var v=h.driftItems[x[0]];return x[0]!=='other'&&v!=null&&v!==0})||!!c.costs;
-  hq(i,'[data-o="driftEdit"]').hidden=split;hq(i,'[data-o="driftSumBox"]').hidden=!split;
+  // driftkostnad totalt: summan av driftraderna och övriga kostnader
   var dc=c.drift+c.costs;hq(i,'[data-o="driftSum"]').innerHTML=dc?kr(dc)+'/mån <small>· '+kr(dc*12)+'/år</small>':'–';
   hqa(i,'[data-f="driftItems.other"]').forEach(function(inp){if(document.activeElement!==inp){var v=h.driftItems.other;inp.value=v==null?'':fmtNum(v,2)}});
   var elM=monthly(h,'driftItems.el');
