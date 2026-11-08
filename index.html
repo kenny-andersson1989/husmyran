@@ -31,7 +31,9 @@ header.top .wrap{display:flex;align-items:center;gap:14px;padding-top:16px;paddi
 .top-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 main{padding:20px 0 60px}
 /* ihopfällbar del med samma utseende som en rubrik i formuläret */
-details.fold{border:1px solid var(--line);border-radius:10px;background:#fbfcfd;margin-top:4px}
+details.fold{border:1px solid var(--line);border-radius:10px;background:#fbfcfd;margin-top:8px}
+details.fold>.fold-body{padding:0 12px 12px}
+details.fold>.fold-body>.sum-block:first-child{margin-top:10px}
 details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:14px;font-weight:800}
 details.fold>summary::-webkit-details-marker{display:none}
 details.fold>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s;flex:none}
@@ -871,18 +873,18 @@ var SECTIONS=[
       fNum('oneOff','Övriga engångskostnader','kr','Besiktning, flytt, bankavgifter …')+
       '</div></details>'+
     '</div>'+
-    // 3. lånet och banken
-    '<div class="subhead">Lånet och banken</div>'+
-    fNum('rate',term('Effektiv ränta',TERMS.rate),'%','Inkl. avgifter, före ränteavdrag')+
-    // amorteringen fälls ihop; beloppet per månad syns i rubriken
-    '<details class="fold full"><summary>Amortering<span class="fold-res" data-o="amortRes"></span></summary><div class="g2">'+
+    // 3. lånet och banken: ränta och amortering i en ihopfällbar del; vad de kostar per månad syns i rubriken
+    '<details class="fold full"><summary>Lånet och banken<span class="fold-res" data-o="bankRes"></span></summary><div class="g2">'+
+      fNum('rate',term('Effektiv ränta',TERMS.rate),'%','Inkl. avgifter, före ränteavdrag')+
+      '<div class="field"><label>Ränta per månad</label><div class="drift-sum" data-o="rateMonth"></div><span class="hint" data-o="rateMonthHint"></span></div>'+
+      '<label class="toggle full" style="padding:0"><input type="checkbox" data-f="deduction"><span class="sw"></span><span>Räkna med '+term('ränteavdrag',TERMS.deduction)+'</span></label>'+
       '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå i %</option><option value="kr">Belopp i kr/mån</option></select></div>'+
       '<div class="field" data-am="pct"><label>Amortering per år</label><div class="unit"><input data-f="amortPct" data-num inputmode="decimal"><span>% /år</span></div></div>'+
       '<div class="field" data-am="kr"><label>Amortering</label><div class="unit"><input data-f="amortKr" data-num inputmode="decimal"><span>kr/mån</span></div></div>'+
       '<div class="field"><label>Amortering per månad</label><div class="drift-sum" data-o="amortMonth"></div><span class="hint">Blir ett sparande i bostaden</span></div>'+
       '<div class="full amort-info" data-o="amortInfo"></div></div></details>'+
     // 4. husets kostnader varje månad i en ihopfällbar del; summan syns i rubriken
-    '<details class="fold full" style="margin-top:16px"><summary>Huset – kostnader varje månad<span class="fold-res" data-o="houseRes"></span></summary><div class="g2">'+
+    '<details class="fold full"><summary>Huset – kostnader varje månad<span class="fold-res" data-o="houseRes"></span></summary><div class="g2">'+
       '<p class="hint full" style="margin:0">Välj mån eller år vid varje belopp.</p>'+
       fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra')+
       fMoney('propertyFee','Fastighetsavgift','<span data-o="feeHint"></span>')+
@@ -898,10 +900,9 @@ var SECTIONS=[
         COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
       '</div></details>'+
     '</div></details>'+
-    // 5. summeringen
-    '<div class="subhead">Summering</div>'+
-    // ränta, amortering och husets utgifter summerade per månad
-    '</div><div data-o="calc"></div>'}},
+    // 5. summeringen i en ihopfällbar del; att betala per månad syns i rubriken
+    '<details class="fold full"><summary>Summering<span class="fold-res" data-o="sumRes"></span></summary><div class="fold-body" data-o="calc"></div></details>'+
+    '</div>'}},
   // försäljning av nuvarande bostad – och om pengarna räcker till nästa köp
   {id:'sale',title:'🏷️ Försäljning av nuvarande bostad',body:function(i){return ''+
     '<div data-show="current"><div class="g2">'+
@@ -1108,7 +1109,11 @@ function renderOutputs(i){
   hq(i,'[data-o="kwhHint"]').textContent=elM&&h.kwh?'≈ '+fmtNum(elM*12/h.kwh,2)+' kr/kWh':'Mängd el, inte kostnad';
   // resultaten i de ihopfällbara delarnas rubriker
   hq(i,'[data-o="feesRes"]').textContent=c.price?kr(c.fees):'';
-  hq(i,'[data-o="amortRes"]').textContent=kr(c.amort)+'/mån · '+fmtNum(c.amortPct,1)+' % per år'+(h.amortMode!=='auto'?' · egen nivå':'');
+  var withDed0=h.deduction&&c.deduct;
+  hq(i,'[data-o="bankRes"]').textContent=kr(c.interest-c.deduct+c.amort)+'/mån · ränta '+fmtNum(c.rate,2)+' % · amortering '+fmtNum(c.amortPct,1)+' %';
+  hq(i,'[data-o="rateMonth"]').innerHTML=kr(c.interest-c.deduct)+'/mån <small>· '+kr((c.interest-c.deduct)*12)+'/år</small>';
+  hq(i,'[data-o="rateMonthHint"]').textContent=withDed0?'Efter ränteavdrag · '+kr(c.interest)+' före':'Före ränteavdrag';
+  hq(i,'[data-o="sumRes"]').textContent=c.has?'Att betala '+kr(c.total)+'/mån'+(!h.current&&c.price?' · engångskostnader '+kr(c.fees):''):'';
   hq(i,'[data-o="amortMonth"]').innerHTML=kr(c.amort)+'/mån <small>· '+kr(c.amort*12)+'/år</small>';
   hq(i,'[data-o="houseRes"]').textContent=kr(c.rent+c.drift+c.fee+c.costs)+'/mån';
   // kontantinsatsen: summan av sparpengarna bredvid, annars 15 % av priset
@@ -1156,9 +1161,7 @@ function renderOutputs(i){
   hq(i,'[data-o="calc"]').innerHTML=once+
     '<div class="sum-block"><h4>Varje månad</h4><div class="month-grid">'+
       '<div><h5>Lånet och banken</h5><div class="calc-list">'+
-        '<div class="rate-row"><span class="l"><span>Ränta '+fmtNum(c.rate,2)+' %</span>'+
-          '<label class="toggle mini"><input type="checkbox" data-f="deduction"'+(h.deduction?' checked':'')+'><span class="sw"></span><span>Räkna med '+term('ränteavdrag',TERMS.deduction)+'</span></label></span>'+
-        '<span class="r">'+kr(c.interest-c.deduct)+'<small>'+(withDed?'efter avdrag · '+kr(c.interest)+' före':'före avdrag')+'</small></span></div>'+
+        line('Ränta',fmtNum(c.rate,2)+' %, '+(withDed?'efter':'före')+' ränteavdrag',kr(c.interest-c.deduct))+
         line('Amortering',fmtNum(c.amortPct,1)+' % av lånet per år',kr(c.amort))+
         line('Summa','',kr(bank),'tot')+'</div></div>'+
       '<div><h5>Huset</h5><div class="calc-list">'+
