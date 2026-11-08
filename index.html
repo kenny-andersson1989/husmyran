@@ -42,6 +42,8 @@ details.fold>summary .fold-res{margin-left:auto;font-size:13px;font-weight:700;c
 details.fold[open]>summary{border-bottom:1px solid var(--line)}
 details.fold>.g2{padding:12px}
 details.fold details.fold{background:#fff}
+.fee-sum{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:8px;font-weight:800}
+.sum-block h4 small{font-weight:600;color:var(--muted);font-size:12.5px}
 /* listorna Vid köpet och Varje månad */
 .sum-block{margin-top:16px}
 .sum-block h4{margin:0 0 4px;font-size:14.5px;font-weight:800}
@@ -868,9 +870,15 @@ var SECTIONS=[
         '<div class="field"><label>Våra sparpengar</label>'+fundsHTML()+'</div>'+
         '<div class="field"><label>Kontantinsats</label><div class="drift-sum" data-o="downSum"></div><span class="hint" data-o="downHint"></span></div></div>'+
       // 2. engångskostnader vid köpet – fälls ihop, summan syns i rubriken
+      // samma rader i samma ordning som i summeringen; lagfart och pantbrevsavgift räknas ut
       '<details class="fold full"><summary>Engångskostnader vid köpet<span class="fold-res" data-o="feesRes"></span></summary><div class="g2">'+
+      '<div class="field"><label data-o="feeLagLbl">'+term('Lagfart',TERMS.lagfart)+'</label><div class="drift-sum" data-o="feeLag"></div><span class="hint" data-o="feeLagHint"></span></div>'+
+      '<div></div>'+
+      '<div class="field"><label data-o="feePantLbl">'+term('Pantbrevsavgift',TERMS.pantbrev)+'</label><div class="drift-sum" data-o="feePant"></div><span class="hint" data-o="feePantHint"></span></div>'+
       fNum('pantbrev','Befintliga '+term('pantbrev',TERMS.pantbrev),'kr','Finns redan på huset – du betalar bara för nya utöver dem')+
       fNum('oneOff','Övriga engångskostnader','kr','Besiktning, flytt, bankavgifter …')+
+      '<div></div>'+
+      '<div class="fee-sum full"><span>Summa engångskostnader</span><b data-o="feeSum"></b></div>'+
       '</div></details>'+
     '</div>'+
     // 3. lånet och banken: ränta och amortering i en ihopfällbar del; vad de kostar per månad syns i rubriken
@@ -1109,6 +1117,15 @@ function renderOutputs(i){
   hq(i,'[data-o="kwhHint"]').textContent=elM&&h.kwh?'≈ '+fmtNum(elM*12/h.kwh,2)+' kr/kWh':'Mängd el, inte kostnad';
   // resultaten i de ihopfällbara delarnas rubriker
   hq(i,'[data-o="feesRes"]').textContent=c.price?kr(c.fees):'';
+  if(!h.current){
+    hq(i,'[data-o="feeLagLbl"]').innerHTML=c.br?'Överlåtelseavgift':term('Lagfart',TERMS.lagfart);
+    hq(i,'[data-o="feePantLbl"]').innerHTML=c.br?'Pantsättningsavgift':term('Pantbrevsavgift',TERMS.pantbrev);
+    hq(i,'[data-o="feeLag"]').textContent=c.price?kr(c.lagfart):'–';
+    hq(i,'[data-o="feePant"]').textContent=c.price?kr(c.pantbrev):'–';
+    hq(i,'[data-o="feeLagHint"]').textContent=c.br?'2,5 % av prisbasbeloppet':'1,5 % av priset + 825 kr';
+    hq(i,'[data-o="feePantHint"]').textContent=c.br?'1 % av prisbasbeloppet':c.pantbrev?'2 % av nya pantbrev ('+kr(c.newPant)+') + 375 kr':'Befintliga pantbrev räcker – inga nya behövs';
+    hq(i,'[data-o="feeSum"]').textContent=c.price?kr(c.fees):'–';
+  }
   var withDed0=h.deduction&&c.deduct;
   hq(i,'[data-o="bankRes"]').textContent=kr(c.interest-c.deduct+c.amort)+'/mån · ränta '+fmtNum(c.rate,2)+' % · amortering '+fmtNum(c.amortPct,1)+' %';
   hq(i,'[data-o="rateMonth"]').innerHTML=kr(c.interest-c.deduct)+'/mån <small>· '+kr((c.interest-c.deduct)*12)+'/år</small>';
@@ -1146,17 +1163,21 @@ function renderOutputs(i){
   var line=function(lab,sub,val,cls){return '<div'+(cls?' class="'+cls+'"':'')+'><span>'+lab+(sub?' <small>'+sub+'</small>':'')+'</span><span>'+val+'</span></div>'};
   var once='';
   if(!h.current&&c.price){var av=fundsAvailable(h),left=av-c.cash;
-    var fees=(c.br?line('− Överlåtelseavgift','2,5 % av prisbasbeloppet',kr(c.lagfart))+line('− Pantsättningsavgift','1 % av prisbasbeloppet',kr(c.pantbrev))
-        :line('− '+term('Lagfart',TERMS.lagfart),'1,5 % av priset + 825 kr',kr(c.lagfart))+
-         line('− '+term('Pantbrevsavgift',TERMS.pantbrev),c.pantbrev?'2 % av nya pantbrev + 375 kr':'befintliga pantbrev räcker',kr(c.pantbrev)))+
-      line('− Övriga engångskostnader','besiktning, flytt …',kr(c.oneOff));
-    once='<div class="sum-block"><h4>Vid köpet – betalas en gång</h4><div class="calc-list">'+
+    // samma rader och ordning som fliken Engångskostnader vid köpet
+    var fees=(c.br?line('Överlåtelseavgift','2,5 % av prisbasbeloppet',kr(c.lagfart))+line('Pantsättningsavgift','1 % av prisbasbeloppet',kr(c.pantbrev))
+        :line(term('Lagfart',TERMS.lagfart),'1,5 % av priset + 825 kr',kr(c.lagfart))+
+         line(term('Pantbrevsavgift',TERMS.pantbrev),c.pantbrev?'2 % av nya pantbrev + 375 kr':'befintliga pantbrev räcker',kr(c.pantbrev)))+
+      line('Övriga engångskostnader','besiktning, flytt …',kr(c.oneOff))+
+      line('Summa engångskostnader','',kr(c.fees),'tot');
+    once='<div class="sum-block"><h4>Engångskostnader vid köpet <small>betalas en gång</small></h4><div class="calc-list">'+fees+'</div>'+
+      '<h4 style="margin-top:12px">Kontantinsats</h4><div class="calc-list">'+
       // med sparpengar: engångskostnaderna dras från pengarna och resten blir kontantinsats
-      (av>0?line('Pengar till köpet','försäljningen och sparpengarna',kr(av),'tot')+fees+
+      (av>0?line('Pengar till köpet','försäljningen och sparpengarna',kr(av))+
+          line('− Summa engångskostnader','',kr(c.fees))+
           line('= Kontantinsats','det som går in i huset',kr(c.down),'tot')+
           (Math.abs(left)<1?'':line(left>0?'Över':'Saknas',left>0?'insatsen kan inte bli större än priset':'pengarna räcker inte till engångskostnaderna',kr(Math.abs(left)),left>0?'ok':'warn'))
         // utan sparpengar: insatsen är 15 % och engångskostnaderna läggs till
-        :line('Kontantinsats','15 % av priset',kr(c.down))+fees.replace(/− /g,'+ ')+line('= Kontanter vid köpet','',kr(c.cash),'tot'))+
+        :line('Kontantinsats','15 % av priset',kr(c.down))+line('+ Summa engångskostnader','',kr(c.fees))+line('= Kontanter vid köpet','',kr(c.cash),'tot'))+
       '</div><p class="hint" style="margin:6px 0 0">Engångskostnaderna betalas en gång och ingår inte i månadskostnaden'+(av>0?' – de tas av pengarna till köpet, så insatsen blir '+kr(c.fees)+' lägre.':'.')+'</p></div>'}
   hq(i,'[data-o="calc"]').innerHTML=once+
     '<div class="sum-block"><h4>Varje månad</h4><div class="month-grid">'+
