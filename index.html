@@ -462,7 +462,7 @@ function newHouse(current){
   return {current:!!current,url:'',address:'',area:'',type:'Villa',tenure:'Äganderätt',price:null,
     living:null,extraArea:null,plot:null,rooms:null,bedrooms:null,year:null,floor:'',heating:'',heatingNote:'',energyClass:'',
     rent:null,drift:null,driftItems:{},kwh:null,household:null,costs:{},per:{},
-    propertyFee:null,down:null,oneOff:null,existingLoan:null,rateFixedUntil:'',rate:3,deduction:false,amortMode:'auto',amortPct:null,amortKr:null,pantbrev:null,
+    propertyFee:null,down:null,oneOff:null,existingLoan:null,rateFixedUntil:'',rate:null,deduction:false,amortMode:'auto',amortPct:null,amortKr:null,pantbrev:null,
     salePrice:null,brokerFee:null,saleOther:null,purchasePrice:null,improvements:null,deferTax:false,
     building:{},features:{},extraFeatures:[],lat:null,lon:null,near:{},nearNames:{},nearPts:{},busStops:[],notes:'',image:'',booliInfo:[]};
 }
@@ -546,7 +546,7 @@ function driftMonthly(h){return driftItemsMonthly(h)}
 // boendekostnad över ett antal år (dagens nivåer), exklusive amortering men inklusive engångskostnader vid köp
 function overTime(c,years){return c.totalExAmort*12*years+(c.cash!=null?c.fees:0)}
 function calc(h){
-  var price=h.price||0, rate=h.rate||0, br=h.tenure==='Bostadsrätt';
+  var price=h.price||0, rate=rateOf(h), br=h.tenure==='Bostadsrätt';
   // engångskostnader vid köp, beroende på lånets storlek
   // äganderätt: lagfart 1,5 % + 825 kr, pantbrev 2 % av nya pantbrev + 375 kr
   // bostadsrätt: överlåtelseavgift 2,5 % och pantsättningsavgift 1 % av prisbasbeloppet
@@ -785,7 +785,7 @@ function fMoney(key,label,hint,cls){
 }
 // sparpengarna till köpet: pengarna från försäljningen räknas ut, resten fylls i per person eller konto
 function fundsHTML(){return '<div class="funds">'+
-  '<div class="fund-row"><span class="fund-lbl" data-o="fundSaleLbl">Från försäljningen</span><div class="unit"><input data-o="fundSale" readonly tabindex="-1" title="Räknas ut under Försäljning av nuvarande bostad"><span>kr</span></div></div>'+
+  '<div class="fund-row"><span class="fund-lbl" data-o="fundSaleLbl">Från försäljningen</span><div class="unit"><input data-o="fundSale" readonly tabindex="-1" title="Räknas ut under Försäljning i den nuvarande bostadens kolumn"><span>kr</span></div></div>'+
   state.g.funds.map(function(x,k){return '<div class="fund-row"><input class="fund-name" data-fundname="'+k+'" value="'+esc(x.name)+'" aria-label="Namn" title="Namnet går att ändra">'+
     '<div class="unit"><input data-fund="'+k+'" data-num inputmode="decimal" value="'+(x.amount==null?'':fmtNum(x.amount,2))+'"><span>kr</span></div></div>'}).join('')+
   '<div class="fund-row tot"><span>Summa</span><span class="fund-v" data-o="fundSum">–</span></div></div>'}
@@ -852,7 +852,7 @@ var SECTIONS=[
       '<span class="hint">Ersätter annonsbilden eller den tecknade bilden</span></div>'+
     '</div>'}},
   // pris, lån, drift och övriga kostnader i en sektion; varje bostad har egna lånevillkor
-  {id:'loan',title:'💰 Boendekostnad, lån och drift',open:true,
+  {id:'loan',title:'💰 Ekonomi',open:true,
    // nettoinkomsten gäller hushållet och används för Kvar att leva på
    shared:function(){return '<div class="loan-grid" style="max-width:420px">'+
      '<div class="field"><label>Hushållets nettoinkomst</label><div class="unit"><input data-g="income" data-num inputmode="decimal"><span>kr/mån</span></div><span class="hint">Efter skatt, alla vuxna – för Kvar att leva på</span></div></div>'},
@@ -863,7 +863,16 @@ var SECTIONS=[
     '<div class="field full"><label data-o="priceLabel">Pris</label><div class="unit"><input data-f="price" data-num inputmode="decimal"><span>kr</span></div></div>'+
     '<div data-show="current" style="display:contents">'+
       fNum('existingLoan','Nuvarande lån','kr','Det du har kvar att betala')+
-      fText('rateFixedUntil','Räntan bunden till','','T.ex. 2027-03 eller rörlig','När räntan kan ändras')+'</div>'+
+      fText('rateFixedUntil','Räntan bunden till','','T.ex. 2027-03 eller rörlig','När räntan kan ändras')+
+      // försäljningen ger pengarna till nästa köp – därför står den här, bredvid köpet
+      '<details class="fold full"><summary>Försäljning<span class="fold-res" data-o="saleRes"></span></summary><div class="g2">'+
+        fNum('salePrice','Förväntat försäljningspris','kr','Lämna tomt för att använda bostadens värde')+
+        fNum('brokerFee','Mäklararvode','kr','Lämna tomt för 1,5 % av försäljningspriset')+
+        fNum('purchasePrice','Ditt inköpspris','kr','Det du en gång betalade')+
+        fNum('improvements','Förbättringsutgifter','kr','Renoveringar och tillbyggnader som minskar den skattepliktiga vinsten')+
+        fNum('saleOther','Övriga säljkostnader','kr','T.ex. styling, flytt')+
+        '<div class="field"><span class="lbl">Skatt på vinsten</span><label class="toggle" style="padding:6px 0"><input type="checkbox" data-f="deferTax"><span class="sw"></span><span>Skjut upp ('+term('uppskov',TERMS.defer)+')</span></label></div>'+
+      '</div><div class="calc-list fold-body" data-o="saleCalc"></div></details></div>'+
     '<div data-show="listing" style="display:contents">'+
       // pengarna till vänster, kontantinsatsen de blir till höger
       '<div class="full g2">'+
@@ -904,23 +913,12 @@ var SECTIONS=[
       DRIFT_ITEMS.filter(function(x){return x[0]!=='el'}).map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
       '<div class="subhead sub">Övriga kostnader</div>'+
       COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
-      '<div class="field full"><label>Driftkostnad totalt</label><div class="drift-sum" data-o="driftSum"></div><span class="hint">Drift och övriga kostnader ovan – avgift och fastighetsavgift ingår inte</span></div>'+
+      '<div class="field full"><label>Summa driftkostnader</label><div class="drift-sum" data-o="driftSum"></div><span class="hint">Avgift, fastighetsavgift, drift och övriga kostnader ovan</span></div>'+
     '</div></details>'+
-    // 5. summeringen i en ihopfällbar del; att betala per månad syns i rubriken
+    // 5. summeringens listor fälls ihop; att betala per månad står alltid synligt under
     '<details class="fold full"><summary>Summering<span class="fold-res" data-o="sumRes"></span></summary><div class="fold-body" data-o="calc"></div></details>'+
+    '<div class="full" data-o="payBox"></div>'+
     '</div>'}},
-  // försäljning av nuvarande bostad – och om pengarna räcker till nästa köp
-  {id:'sale',title:'🏷️ Försäljning av nuvarande bostad',body:function(i){return ''+
-    '<div data-show="current"><div class="g2">'+
-      fNum('salePrice','Förväntat försäljningspris','kr','Lämna tomt för att använda bostadens värde')+
-      fNum('brokerFee','Mäklararvode','kr','Lämna tomt för 1,5 % av försäljningspriset')+
-      fNum('purchasePrice','Ditt inköpspris','kr','Det du en gång betalade')+
-      fNum('improvements','Förbättringsutgifter','kr','Renoveringar och tillbyggnader som minskar den skattepliktiga vinsten')+
-      fNum('saleOther','Övriga säljkostnader','kr','T.ex. styling, flytt')+
-      '<div class="field"><span class="lbl">Skatt på vinsten</span><label class="toggle" style="padding:6px 0"><input type="checkbox" data-f="deferTax"><span class="sw"></span><span>Skjut upp ('+term('uppskov',TERMS.defer)+')</span></label></div>'+
-    '</div><div class="calc-list" data-o="saleCalc"></div></div>'+
-    // pengarna från försäljningen blir en del av kontantinsatsen för bostaden man köper
-    '<div data-show="listing"><p class="hint" style="margin:0">Pengarna från försäljningen går till kontantinsatsen under <b>Boendekostnad, lån och drift</b>.</p></div>'}},
   {id:'building',title:'🧱 Byggnad',body:function(i){return '<div class="g2">'+BUILDING.map(function(x){return fText('building.'+x[0],x[1])}).join('')+'</div>'}},
   {id:'features',title:'✨ Egenskaper och anteckningar',body:function(i){return '<div class="chips">'+
     FEATURES.map(function(f){return '<label class="chip"><input type="checkbox" data-feat="'+f[0]+'"><span>'+f[1]+'</span></label>'}).join('')+
@@ -1106,8 +1104,8 @@ function renderOutputs(i){
   var amortInp=hq(i,'[data-f="amortPct"]');amortInp.disabled=h.amortMode!=='manual';
   if(h.amortMode!=='manual'){amortInp.value='';amortInp.placeholder=fmtNum(c.autoAmort)+' (automatiskt)'}
   // elpris per kWh när både kostnad och förbrukning finns
-  // driftkostnad totalt: summan av driftraderna och övriga kostnader
-  var dc=c.drift+c.costs;hq(i,'[data-o="driftSum"]').innerHTML=dc?kr(dc)+'/mån <small>· '+kr(dc*12)+'/år</small>':'–';
+  // summa driftkostnader: samma total som i flikens rubrik
+  var dc=c.rent+c.drift+c.fee+c.costs;hq(i,'[data-o="driftSum"]').innerHTML=dc?kr(dc)+'/mån <small>· '+kr(dc*12)+'/år</small>':'–';
   hqa(i,'[data-f="driftItems.other"]').forEach(function(inp){if(document.activeElement!==inp){var v=h.driftItems.other;inp.value=v==null?'':fmtNum(v,2)}});
   var elM=monthly(h,'driftItems.el');
   hq(i,'[data-o="kwhHint"]').textContent=elM&&h.kwh?'≈ '+fmtNum(elM*12/h.kwh,2)+' kr/kWh':'Mängd el, inte kostnad';
@@ -1123,17 +1121,20 @@ function renderOutputs(i){
     hq(i,'[data-o="feeSum"]').textContent=c.price?kr(c.fees):'–';
   }
   var withDed0=h.deduction&&c.deduct;
-  hq(i,'[data-o="bankRes"]').textContent=kr(c.interest-c.deduct+c.amort)+'/mån · ränta '+fmtNum(c.rate,2)+' % · amortering '+fmtNum(c.amortPct,1)+' %';
+  hq(i,'[data-o="bankRes"]').textContent=(!h.current&&c.price&&c.ltv>0.9?'⚠️ över bolånetaket · ':'')+kr(c.interest-c.deduct+c.amort)+'/mån · ränta '+fmtNum(c.rate,2)+' % · amortering '+fmtNum(c.amortPct,1)+' %';
   hq(i,'[data-o="rateMonth"]').innerHTML=kr(c.interest-c.deduct)+'/mån <small>· '+kr((c.interest-c.deduct)*12)+'/år</small>';
   hq(i,'[data-o="rateMonthHint"]').textContent=withDed0?'Efter ränteavdrag · '+kr(c.interest)+' före':'Före ränteavdrag';
-  hq(i,'[data-o="sumRes"]').textContent=c.has?'Att betala '+kr(c.total)+'/mån'+(!h.current&&c.price?' · engångskostnader '+kr(c.fees):''):'';
+  hq(i,'[data-o="sumRes"]').textContent=!h.current&&c.price?'engångskostnader och varje månad':'varje månad';
+  hq(i,'[data-o="saleRes"]').textContent=c.sale?kr(c.sale.net)+' kvar':'';
   hq(i,'[data-o="amortMonth"]').innerHTML=kr(c.amort)+'/mån <small>· '+kr(c.amort*12)+'/år</small>';
   hq(i,'[data-o="houseRes"]').textContent=kr(c.rent+c.drift+c.fee+c.costs)+'/mån';
   // kontantinsatsen: summan av sparpengarna bredvid, annars 15 % av priset
   var fromFunds=!h.current&&fundsAvailable(h)>0;
   hq(i,'[data-o="downSum"]').innerHTML=c.price?kr(c.down)+' <small>· '+fmtNum(c.downPct,1)+' % av priset</small>':'–';
   hq(i,'[data-o="downHint"]').textContent=!c.price?'Räknas ut när priset är ifyllt':
-    (fromFunds?'Sparpengarna '+kr(fundsAvailable(h))+' minus engångskostnaderna '+kr(c.fees):'15 % av priset – fyll i sparpengarna')+'. Lånet blir '+fmtNum(c.ltv*100,1)+' % av priset'+(c.ltv>0.9?' – över bolånetaket 90 %':'')+'.';
+    (fromFunds?'= sparpengar '+kr(fundsAvailable(h))+' − engångskostnader '+kr(c.fees):'15 % av priset – fyll i sparpengarna')+' · lånet '+fmtNum(c.ltv*100,1)+' %'+(c.ltv>0.9?' – över bolånetaket':'');
+  // tom ränta visar vilken ränta som används i stället
+  hq(i,'[data-f="rate"]').placeholder=h.rate==null?fmtNum(rateOf(h),2)+(state.houses[1-i].rate!=null?' (samma som '+letter(1-i)+')':''):'';
   hq(i,'[data-f="propertyFee"]').placeholder=h.propertyFee==null?fmtNum(perOf(h,'propertyFee')==='år'?c.autoFee:c.autoFee/12)+' (uppsk.)':'';
   // förklaring under fastighetsavgiften – alltid en rad så att kolumnerna hamnar i jämnhöjd
   hq(i,'[data-o="feeHint"]').textContent=h.propertyFee!=null?'Ditt eget belopp':
@@ -1187,9 +1188,9 @@ function renderOutputs(i){
         line('Fastighetsavgift','',kr(c.fee))+
         line('Övriga kostnader','bredband, parkering …',kr(c.costs))+
         line('Summa','',kr(house),'tot')+'</div></div>'+
-    '</div><div class="pay-total"><span>Att betala per månad</span><b>'+(c.has?kr(c.total):'–')+'</b></div>'+
-    (inc&&c.has?'<div class="hint" style="margin-top:6px">Kvar av nettoinkomsten: <b>'+kr(c.left)+'</b> per månad · '+fmtNum(c.total/inc*100,0)+' % går till boendet</div>':'')+
-    '</div>';
+    '</div></div>';
+  hq(i,'[data-o="payBox"]').innerHTML='<div class="pay-total"><span>Att betala per månad</span><b>'+(c.has?kr(c.total):'–')+'</b></div>'+
+    (inc&&c.has?'<div class="hint" style="margin-top:6px">Kvar av nettoinkomsten: <b>'+kr(c.left)+'</b> per månad · '+fmtNum(c.total/inc*100,0)+' % går till boendet</div>':'');
   // försäljning (nuvarande bostad) och finansiering av köpet (annonsbostad)
   var s=c.sale;
   hq(i,'[data-f="salePrice"]').placeholder=c.price?fmtNum(c.price):'';
@@ -1378,6 +1379,8 @@ function krR(n){
 var AB=['<span class="a-c">A</span>','<span class="b-c">B</span>'];
 // pengar som blir över (eller saknas) vid köpet: försäljningen av den nuvarande bostaden plus sparpengarna, minus kontanterna som behövs
 // pengar till kontantinsatsen för en bostad man köper: den nuvarande bostadens försäljning plus sparpengarna
+// räntan: egen, annars samma som den andra bostaden, annars 3 %
+function rateOf(h){if(h.rate!=null)return h.rate;var o=state.houses[1-state.houses.indexOf(h)];return o&&o.rate!=null?o.rate:3}
 function fundsAvailable(h){
   var o=state.houses[1-state.houses.indexOf(h)],sale=o&&o.current?calc(o).sale:null;
   return (sale?sale.net:0)+(fundsSum()||0);
@@ -1424,9 +1427,9 @@ function renderOverview(A,B,ca,cb){
   var light=function(k){var c=cs[k];if(!inc||!c.has)return '';var p=c.total/inc*100;
     return '<br><span class="light '+(p<=30?'g':p<=40?'y':'r')+'">'+fmtNum(p,0)+' % av nettoinkomsten</span>'};
   var v=val('total');row('Att betala / mån','ränta, amortering, avgift, drift och övriga kostnader',v[0],v[1],-1,'total',light);
-  // fördelningen på ränta, amortering och husets utgifter står under Boendekostnad, lån och drift
+  // fördelningen på ränta, amortering och husets utgifter står under Ekonomi
   if(inc){v=val('left');row('Kvar att leva på / mån','nettoinkomst minus att betala',v[0],v[1],1,'total')}
-  else rows.push('<tr><td>Kvar att leva på</td><td colspan="3" class="hint">Fyll i hushållets nettoinkomst under Boendekostnad, lån och drift</td></tr>');
+  else rows.push('<tr><td>Kvar att leva på</td><td colspan="3" class="hint">Fyll i hushållets nettoinkomst under Ekonomi</td></tr>');
   if(!A.current||!B.current){
     // nuvarande bostad: pengarna som blir kvar när den säljs; annonsbostad: kontanterna som behövs vid köpet
     var money=[0,1].map(function(k){var h=hs[k],c=cs[k];
@@ -1462,11 +1465,10 @@ function renderSecResults(A,B,ca,cb){
     return [0,1].filter(function(k){return st[k]!=null}).map(function(k){return AB[k]+' '+st[k]}).join(' · ')}
   set('house',pair(function(h){var m=[];if(!h.address)m.push('adress');if(!h.living)m.push('boarea');if(!h.rooms)m.push('rum');return m}));
   set('loan',pair(function(h,c){var m=[],fee=h.tenure==='Bostadsrätt'||h.tenure==='Hyresrätt';
-    if(!h.price)m.push(h.current?'värde':'pris');if(h.current&&h.existingLoan==null)m.push('lån');if(!h.rate)m.push('ränta');
+    if(!h.price)m.push(h.current?'värde':'pris');if(h.current&&h.existingLoan==null)m.push('lån');if(h.current&&h.purchasePrice==null)m.push('inköpspris');if(!rateOf(h))m.push('ränta');
     if(fee&&!h.rent)m.push('avgift');if(!fee&&!c.drift)m.push('driftkostnad');return m}));
   set('near',pair(function(h){return h.lat==null?['läge']:[]}));
   var cur=A.current?0:B.current?1:-1;
-  set('sale',cur<0?'':miss(state.houses[cur].purchasePrice==null?['inköpspris']:[]).replace('saknar','Saknar'));
   var sale=cur>=0?[ca,cb][cur].sale:null,fs=fundsSum();
   $$('[data-o="fundSaleLbl"]').forEach(function(e){e.textContent=cur>=0?'Försäljning av '+letter(cur):'Försäljning'});
   $$('[data-o="fundSale"]').forEach(function(e){e.value=sale?fmtNum(Math.round(sale.net)):'';e.placeholder=cur<0?'Ingen nuvarande bostad':'Fyll i värde och lån'});
