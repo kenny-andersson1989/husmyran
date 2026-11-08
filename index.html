@@ -31,12 +31,15 @@ header.top .wrap{display:flex;align-items:center;gap:14px;padding-top:16px;paddi
 .top-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 main{padding:20px 0 60px}
 /* ihopfällbar del med samma utseende som en rubrik i formuläret */
-details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;margin-top:10px;padding-top:12px;border-top:1px solid var(--line)}
+details.fold{border:1px solid var(--line);border-radius:10px;background:#fbfcfd;margin-top:4px}
+details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:14px;font-weight:800}
 details.fold>summary::-webkit-details-marker{display:none}
 details.fold>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s;flex:none}
 details.fold[open]>summary::after{transform:rotate(-135deg)}
-details.fold .fold-res{margin-left:auto;font-size:13px;font-weight:700;color:var(--muted)}
-details.fold[open]>summary{margin-bottom:10px}
+details.fold>summary .fold-res{margin-left:auto;font-size:13px;font-weight:700;color:var(--muted);text-align:right}
+details.fold[open]>summary{border-bottom:1px solid var(--line)}
+details.fold>.g2{padding:12px}
+details.fold details.fold{background:#fff}
 /* listorna Vid köpet och Varje månad */
 .sum-block{margin-top:16px}
 .sum-block h4{margin:0 0 4px;font-size:14.5px;font-weight:800}
@@ -215,11 +218,6 @@ details.sec>summary:hover{background:#fafcfd;border-radius:var(--radius)}
 .calc-list div.tot{font-weight:800;border-bottom:0}
 .calc-list div.gap{border:0;padding-top:8px;font-weight:800;font-size:12.5px;color:var(--muted)}
 .sumline{grid-column:1/-1;display:flex;justify-content:space-between;gap:10px;background:#f3f7fa;border-radius:10px;padding:8px 12px;font-size:13.5px;font-weight:700}
-/* driftkostnadens delar i en utfällbar del */
-details.split{border:1px dashed var(--line);border-radius:10px;padding:8px 12px}
-details.split>summary{cursor:pointer;font-size:13px;font-weight:800;color:var(--brand-ink)}
-details.split>summary .hint{font-weight:400;margin-left:4px}
-details.split[open]>summary{margin-bottom:10px}
 .drift-sum{background:#f3f7fa;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-weight:700}
 .drift-sum small{color:var(--muted);font-weight:400}
 /* ordförklaring: prickad understrykning, rutan visas vid pekning eller tryck */
@@ -876,26 +874,29 @@ var SECTIONS=[
     // 3. lånet och banken
     '<div class="subhead">Lånet och banken</div>'+
     fNum('rate',term('Effektiv ränta',TERMS.rate),'%','Inkl. avgifter, före ränteavdrag')+
-    // amorteringskravet och mätaren fälls ihop; procenten och belåningen syns i rubriken
-    '<details class="split full"><summary>Amortering <span class="hint" data-o="amortRes"></span></summary><div class="g2">'+
-    '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå i %</option><option value="kr">Belopp i kr/mån</option></select></div>'+
-    '<div class="field" data-am="pct"><label>Amortering per år</label><div class="unit"><input data-f="amortPct" data-num inputmode="decimal"><span>% /år</span></div></div>'+
-    '<div class="field" data-am="kr"><label>Amortering</label><div class="unit"><input data-f="amortKr" data-num inputmode="decimal"><span>kr/mån</span></div></div>'+
-    '<div class="full amort-info" data-o="amortInfo"></div></div></details>'+
-    // 4. husets månadskostnader
-    '<div class="subhead">Huset – kostnader varje månad <span class="hint">välj mån eller år vid varje belopp</span></div>'+
-    fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra')+
-    fMoney('propertyFee','Fastighetsavgift','<span data-o="feeHint"></span>')+
-    // driftkostnaden som ett belopp; delarna fälls ut vid behov
-    '<div data-o="driftEdit" style="display:contents">'+fMoney('driftItems.other','Driftkostnad totalt','Hela beloppet – eller dela upp det nedan')+'</div>'+
-    '<div class="field" data-o="driftSumBox"><label>Driftkostnad totalt</label><div class="drift-sum" data-o="driftSum"></div><span class="hint">Summan av delarna nedan, med övriga kostnader</span></div>'+
-    '<details class="split full"><summary>Dela upp driftkostnaden <span class="hint">el, uppvärmning, vatten, försäkring, bredband, parkering …</span></summary><div class="g2">'+
-      // elkostnad och elförbrukning bredvid varandra
-      fMoney('driftItems.el','El',DRIFT_HINTS.el)+
-      '<div class="field"><label>Elförbrukning</label><div class="unit"><input data-f="kwh" data-num inputmode="decimal"><span>kWh/år</span></div><span class="hint" data-o="kwhHint"></span></div>'+
-      DRIFT_ITEMS.filter(function(x){return x[0]!=='el'}).map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
-      '<div class="subhead sub">Övriga kostnader</div>'+
-      COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
+    // amorteringen fälls ihop; beloppet per månad syns i rubriken
+    '<details class="fold full"><summary>Amortering<span class="fold-res" data-o="amortRes"></span></summary><div class="g2">'+
+      '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå i %</option><option value="kr">Belopp i kr/mån</option></select></div>'+
+      '<div class="field" data-am="pct"><label>Amortering per år</label><div class="unit"><input data-f="amortPct" data-num inputmode="decimal"><span>% /år</span></div></div>'+
+      '<div class="field" data-am="kr"><label>Amortering</label><div class="unit"><input data-f="amortKr" data-num inputmode="decimal"><span>kr/mån</span></div></div>'+
+      '<div class="field"><label>Amortering per månad</label><div class="drift-sum" data-o="amortMonth"></div><span class="hint">Blir ett sparande i bostaden</span></div>'+
+      '<div class="full amort-info" data-o="amortInfo"></div></div></details>'+
+    // 4. husets kostnader varje månad i en ihopfällbar del; summan syns i rubriken
+    '<details class="fold full" style="margin-top:16px"><summary>Huset – kostnader varje månad<span class="fold-res" data-o="houseRes"></span></summary><div class="g2">'+
+      '<p class="hint full" style="margin:0">Välj mån eller år vid varje belopp.</p>'+
+      fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra')+
+      fMoney('propertyFee','Fastighetsavgift','<span data-o="feeHint"></span>')+
+      // driftkostnaden som ett belopp; delarna fälls ut vid behov
+      '<div data-o="driftEdit" style="display:contents">'+fMoney('driftItems.other','Driftkostnad totalt','Hela beloppet – eller dela upp det nedan')+'</div>'+
+      '<div class="field" data-o="driftSumBox"><label>Driftkostnad totalt</label><div class="drift-sum" data-o="driftSum"></div><span class="hint">Summan av delarna nedan, med övriga kostnader</span></div>'+
+      '<details class="fold full"><summary>Dela upp driftkostnaden<span class="fold-res">el, värme, vatten, bredband …</span></summary><div class="g2">'+
+        // elkostnad och elförbrukning bredvid varandra
+        fMoney('driftItems.el','El',DRIFT_HINTS.el)+
+        '<div class="field"><label>Elförbrukning</label><div class="unit"><input data-f="kwh" data-num inputmode="decimal"><span>kWh/år</span></div><span class="hint" data-o="kwhHint"></span></div>'+
+        DRIFT_ITEMS.filter(function(x){return x[0]!=='el'}).map(function(x){return fMoney('driftItems.'+x[0],x[1],DRIFT_HINTS[x[0]])}).join('')+
+        '<div class="subhead sub">Övriga kostnader</div>'+
+        COSTS.map(function(x){return fMoney('costs.'+x[0],x[1])}).join('')+
+      '</div></details>'+
     '</div></details>'+
     // 5. summeringen
     '<div class="subhead">Summering</div>'+
@@ -1107,7 +1108,9 @@ function renderOutputs(i){
   hq(i,'[data-o="kwhHint"]').textContent=elM&&h.kwh?'≈ '+fmtNum(elM*12/h.kwh,2)+' kr/kWh':'Mängd el, inte kostnad';
   // resultaten i de ihopfällbara delarnas rubriker
   hq(i,'[data-o="feesRes"]').textContent=c.price?kr(c.fees):'';
-  hq(i,'[data-o="amortRes"]').textContent=fmtNum(c.amortPct,1)+' % per år'+(c.price&&c.loan?' · belåning '+fmtNum(c.ltv*100,1)+' %':'')+(h.amortMode!=='auto'?' · egen nivå':' · enligt amorteringskravet');
+  hq(i,'[data-o="amortRes"]').textContent=kr(c.amort)+'/mån · '+fmtNum(c.amortPct,1)+' % per år'+(h.amortMode!=='auto'?' · egen nivå':'');
+  hq(i,'[data-o="amortMonth"]').innerHTML=kr(c.amort)+'/mån <small>· '+kr(c.amort*12)+'/år</small>';
+  hq(i,'[data-o="houseRes"]').textContent=kr(c.rent+c.drift+c.fee+c.costs)+'/mån';
   // kontantinsatsen: summan av sparpengarna bredvid, annars 15 % av priset
   var fromFunds=!h.current&&fundsAvailable(h)>0;
   hq(i,'[data-o="downSum"]').innerHTML=c.price?kr(c.down)+' <small>· '+fmtNum(c.downPct,1)+' % av priset</small>':'–';
