@@ -838,7 +838,9 @@ var SECTIONS=[
     '<div data-show="listing" style="display:contents">'+
       // kontantinsatsen och sparpengarna bredvid varandra på en egen rad
       '<div class="full g2">'+
-      '<div class="field"><label>Kontantinsats</label><div class="drift-sum" data-o="downSum"></div><span class="hint" data-o="downHint"></span></div>'+
+      '<div class="field"><label>Kontantinsats</label><div class="drift-sum" data-o="downSum"></div><span class="hint" data-o="downHint"></span>'+
+        // köpets engångskostnader, som betalas kontant tillsammans med insatsen
+        '<div class="calc-list" data-o="buyFees" style="margin-top:8px"></div></div>'+
       // sparpengarna bredvid kontantinsatsen – samma belopp för båda bostäderna
       '<div class="field"><label>Våra sparpengar</label>'+fundsHTML()+'</div></div>'+
       fNum('pantbrev','Befintliga '+term('pantbrev',TERMS.pantbrev),'kr','Finns redan på huset – du betalar bara för nya utöver dem')+
@@ -1068,6 +1070,12 @@ function renderOutputs(i){
   hqa(i,'[data-f="driftItems.other"]').forEach(function(inp){if(document.activeElement!==inp){var v=h.driftItems.other;inp.value=v==null?'':fmtNum(v,2)}});
   var elM=monthly(h,'driftItems.el');
   hq(i,'[data-o="kwhHint"]').textContent=elM&&h.kwh?'≈ '+fmtNum(elM*12/h.kwh,2)+' kr/kWh':'Mängd el, inte kostnad';
+  // lagfart och pantbrev (bostadsrätt: överlåtelse- och pantsättningsavgift) och allt som betalas kontant
+  hq(i,'[data-o="buyFees"]').innerHTML=h.current||!c.price?'':c.br
+    ?row('Överlåtelseavgift',kr(c.lagfart))+row('Pantsättningsavgift',kr(c.pantbrev))+row('Kontanter vid köpet',kr(c.cash),'tot')
+    :'<div><span>'+term('Lagfart',TERMS.lagfart)+' <small>1,5 % + 825 kr</small></span><span>'+kr(c.lagfart)+'</span></div>'+
+     '<div><span>Nya '+term('pantbrev',TERMS.pantbrev)+' <small>'+(c.pantbrev?'2 % av lånet utöver befintliga + 375 kr':'befintliga räcker')+'</small></span><span>'+kr(c.pantbrev)+'</span></div>'+
+     row('Kontanter vid köpet',kr(c.cash),'tot');
   // kontantinsatsen: summan av sparpengarna bredvid, annars 15 % av priset
   var fromFunds=!h.current&&fundsAvailable(h)>0;
   hq(i,'[data-o="downSum"]').innerHTML=c.price?kr(c.down)+' <small>· '+fmtNum(c.downPct,1)+' % av priset</small>':'–';
