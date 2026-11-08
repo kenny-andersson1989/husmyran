@@ -30,6 +30,13 @@ header.top .wrap{display:flex;align-items:center;gap:14px;padding-top:16px;paddi
 .brand p{margin:0;color:var(--muted);font-size:14px}
 .top-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 main{padding:20px 0 60px}
+/* ihopfällbar del med samma utseende som en rubrik i formuläret */
+details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;margin-top:10px;padding-top:12px;border-top:1px solid var(--line)}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:.2s;flex:none}
+details.fold[open]>summary::after{transform:rotate(-135deg)}
+details.fold .fold-res{margin-left:auto;font-size:13px;font-weight:700;color:var(--muted)}
+details.fold[open]>summary{margin-bottom:10px}
 /* listorna Vid köpet och Varje månad */
 .sum-block{margin-top:16px}
 .sum-block h4{margin:0 0 4px;font-size:14.5px;font-weight:800}
@@ -860,18 +867,21 @@ var SECTIONS=[
       '<div class="full g2">'+
         '<div class="field"><label>Våra sparpengar</label>'+fundsHTML()+'</div>'+
         '<div class="field"><label>Kontantinsats</label><div class="drift-sum" data-o="downSum"></div><span class="hint" data-o="downHint"></span></div></div>'+
-      // 2. engångskostnader vid köpet
-      '<div class="subhead">Engångskostnader vid köpet</div>'+
+      // 2. engångskostnader vid köpet – fälls ihop, summan syns i rubriken
+      '<details class="fold full"><summary>Engångskostnader vid köpet<span class="fold-res" data-o="feesRes"></span></summary><div class="g2">'+
       fNum('pantbrev','Befintliga '+term('pantbrev',TERMS.pantbrev),'kr','Finns redan på huset – du betalar bara för nya utöver dem')+
       fNum('oneOff','Övriga engångskostnader','kr','Besiktning, flytt, bankavgifter …')+
+      '</div></details>'+
     '</div>'+
     // 3. lånet och banken
     '<div class="subhead">Lånet och banken</div>'+
     fNum('rate',term('Effektiv ränta',TERMS.rate),'%','Inkl. avgifter, före ränteavdrag')+
+    // amorteringskravet och mätaren fälls ihop; procenten och belåningen syns i rubriken
+    '<details class="split full"><summary>Amortering <span class="hint" data-o="amortRes"></span></summary><div class="g2">'+
     '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå i %</option><option value="kr">Belopp i kr/mån</option></select></div>'+
     '<div class="field" data-am="pct"><label>Amortering per år</label><div class="unit"><input data-f="amortPct" data-num inputmode="decimal"><span>% /år</span></div></div>'+
     '<div class="field" data-am="kr"><label>Amortering</label><div class="unit"><input data-f="amortKr" data-num inputmode="decimal"><span>kr/mån</span></div></div>'+
-    '<div class="full amort-info" data-o="amortInfo"></div>'+
+    '<div class="full amort-info" data-o="amortInfo"></div></div></details>'+
     // 4. husets månadskostnader
     '<div class="subhead">Huset – kostnader varje månad <span class="hint">välj mån eller år vid varje belopp</span></div>'+
     fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra')+
@@ -1095,6 +1105,9 @@ function renderOutputs(i){
   hqa(i,'[data-f="driftItems.other"]').forEach(function(inp){if(document.activeElement!==inp){var v=h.driftItems.other;inp.value=v==null?'':fmtNum(v,2)}});
   var elM=monthly(h,'driftItems.el');
   hq(i,'[data-o="kwhHint"]').textContent=elM&&h.kwh?'≈ '+fmtNum(elM*12/h.kwh,2)+' kr/kWh':'Mängd el, inte kostnad';
+  // resultaten i de ihopfällbara delarnas rubriker
+  hq(i,'[data-o="feesRes"]').textContent=c.price?kr(c.fees):'';
+  hq(i,'[data-o="amortRes"]').textContent=fmtNum(c.amortPct,1)+' % per år'+(c.price&&c.loan?' · belåning '+fmtNum(c.ltv*100,1)+' %':'')+(h.amortMode!=='auto'?' · egen nivå':' · enligt amorteringskravet');
   // kontantinsatsen: summan av sparpengarna bredvid, annars 15 % av priset
   var fromFunds=!h.current&&fundsAvailable(h)>0;
   hq(i,'[data-o="downSum"]').innerHTML=c.price?kr(c.down)+' <small>· '+fmtNum(c.downPct,1)+' % av priset</small>':'–';
