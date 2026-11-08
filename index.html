@@ -892,7 +892,7 @@ var SECTIONS=[
       '<div class="field"><label>Amortering per månad</label><div class="drift-sum" data-o="amortMonth"></div><span class="hint">Blir ett sparande i bostaden</span></div>'+
       '<div class="full amort-info" data-o="amortInfo"></div></div></details>'+
     // 4. husets kostnader varje månad i en ihopfällbar del; summan syns i rubriken
-    '<details class="fold full"><summary>Huset – kostnader varje månad<span class="fold-res" data-o="houseRes"></span></summary><div class="g2">'+
+    '<details class="fold full"><summary>Driftkostnader<span class="fold-res" data-o="houseRes"></span></summary><div class="g2">'+
       '<p class="hint full" style="margin:0">Välj mån eller år vid varje belopp.</p>'+
       fNum('rent','Avgift / hyra','kr/mån','Månadsavgift till föreningen eller hyra')+
       fMoney('propertyFee','Fastighetsavgift','<span data-o="feeHint"></span>')+
@@ -1181,7 +1181,7 @@ function renderOutputs(i){
         line('Ränta',fmtNum(c.rate,2)+' %, '+(withDed?'efter':'före')+' ränteavdrag',kr(c.interest-c.deduct))+
         line('Amortering',fmtNum(c.amortPct,1)+' % av lånet per år',kr(c.amort))+
         line('Summa','',kr(bank),'tot')+'</div></div>'+
-      '<div><h5>Huset</h5><div class="calc-list">'+
+      '<div><h5>Driftkostnader</h5><div class="calc-list">'+
         line(c.br?'Månadsavgift':'Avgift / hyra','',kr(c.rent))+
         line('Driftkostnad','el, värme, vatten …',kr(c.drift))+
         line('Fastighetsavgift','',kr(c.fee))+
