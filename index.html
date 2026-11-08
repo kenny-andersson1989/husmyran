@@ -32,11 +32,11 @@ header.top .wrap{display:flex;align-items:center;gap:14px;padding-top:16px;paddi
 main{padding:20px 0 60px}
 /* pengar till köpet */
 .funds{display:flex;flex-direction:column;gap:6px;max-width:460px}
-.fund-row{display:grid;grid-template-columns:1fr 180px;gap:10px;align-items:center}
-.fund-row .fund-name{font:inherit;font-weight:700;border:1px solid transparent;background:transparent;border-radius:8px;padding:6px 8px;color:var(--ink);min-width:0}
+.fund-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:8px;align-items:center}
+.fund-row .fund-name{font:inherit;font-size:13.5px;font-weight:700;border:1px solid transparent;background:transparent;border-radius:8px;padding:6px 8px;color:var(--ink);min-width:0}
 .fund-row .fund-name:hover,.fund-row .fund-name:focus{border-color:var(--line);background:#fff;outline:none}
 .fund-row .unit input{font:inherit;width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 52px 8px 10px;background:#fbfcfd}
-.fund-row .fund-lbl{padding:0 8px;color:var(--muted);font-weight:700}
+.fund-row .fund-lbl{padding:0 8px;color:var(--muted);font-size:13px;font-weight:700}
 .fund-row .fund-v{text-align:right;font-weight:700;padding-right:10px}
 .fund-row.tot{border-top:1px solid var(--line);padding-top:6px;font-weight:800}
 .fund-row.tot span:first-child{padding-left:8px}
@@ -300,7 +300,6 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 16px 3
   .brand h1{font-size:22px}
   .col .g2{grid-template-columns:1fr}
   .brand p{display:none}
-  .fund-row{grid-template-columns:1fr 150px}
   table.ov-t td:first-child small{display:none}
   table.ov-t{font-size:13px}
 }
@@ -757,6 +756,12 @@ function fMoney(key,label,hint,cls){
     '<span class="per-tg" role="group" aria-label="Period"><button type="button" data-per="'+key+'" data-v="mån" title="kr per månad">mån</button><button type="button" data-per="'+key+'" data-v="år" title="kr per år">år</button></span></div>'+
     (hint?'<span class="hint">'+hint+'</span>':'')+'</div>';
 }
+// sparpengarna till köpet: pengarna från försäljningen räknas ut, resten fylls i per person eller konto
+function fundsHTML(){return '<div class="funds">'+
+  '<div class="fund-row"><span class="fund-lbl" data-o="fundSaleLbl">Från försäljningen</span><span class="fund-v" data-o="fundSale">–</span></div>'+
+  state.g.funds.map(function(x,k){return '<div class="fund-row"><input class="fund-name" data-fundname="'+k+'" value="'+esc(x.name)+'" aria-label="Namn" title="Namnet går att ändra">'+
+    '<div class="unit"><input data-fund="'+k+'" data-num inputmode="decimal" value="'+(x.amount==null?'':fmtNum(x.amount,2))+'"><span>kr</span></div></div>'}).join('')+
+  '<div class="fund-row tot"><span>Summa</span><span class="fund-v" data-o="fundSum">–</span></div></div>'}
 // ord med en kort förklaring som visas när man pekar på eller trycker på ordet
 var TERMS={
   rate:'Räntan inklusive bankens avgifter – den siffra banken anger i sitt erbjudande.',
@@ -823,16 +828,20 @@ var SECTIONS=[
   {id:'loan',title:'💰 Boendekostnad, lån och drift',open:true,body:function(i){return '<div class="g2">'+
     '<div class="subhead" style="margin-top:0">Pris och lån</div>'+
     '<div class="field full"><label data-o="priceLabel">Pris</label><div class="unit"><input data-f="price" data-num inputmode="decimal"><span>kr</span></div></div>'+
-    fMoney('propertyFee','Fastighetsavgift','<span data-o="feeHint"></span>')+
     // lika många fält för nuvarande bostad och annonsbostad så att raderna hamnar i jämnhöjd
     '<div data-show="current" style="display:contents">'+
       fNum('existingLoan','Nuvarande lån','kr','Det du har kvar att betala')+
-      fText('rateFixedUntil','Räntan bunden till','','T.ex. 2027-03 eller rörlig','När räntan kan ändras')+'<div></div></div>'+
+      fText('rateFixedUntil','Räntan bunden till','','T.ex. 2027-03 eller rörlig','När räntan kan ändras')+'</div>'+
     '<div data-show="listing" style="display:contents">'+
+      // kontantinsatsen och sparpengarna bredvid varandra på en egen rad
+      '<div class="full g2">'+
       '<div class="field"><label>Kontantinsats</label><div class="unit"><input data-f="down" data-num inputmode="decimal"><span>kr</span></div><span class="hint" data-o="downHint"></span>'+
         '<span class="hint" data-o="downRoom"></span></div>'+
+      // sparpengarna bredvid kontantinsatsen – samma belopp för båda bostäderna
+      '<div class="field"><label>Våra sparpengar</label>'+fundsHTML()+'</div></div>'+
       fNum('pantbrev','Befintliga '+term('pantbrev',TERMS.pantbrev),'kr','Finns redan på huset – du betalar bara för nya utöver dem')+
     '</div>'+
+    fMoney('propertyFee','Fastighetsavgift','<span data-o="feeHint"></span>')+
     fNum('rate',term('Effektiv ränta',TERMS.rate),'%','Inkl. avgifter, före ränteavdrag')+
     '<div class="field"><label>Amortering</label><select data-f="amortMode"><option value="auto">Enligt amorteringskravet</option><option value="manual">Egen nivå i %</option><option value="kr">Belopp i kr/mån</option></select></div>'+
     '<div class="field" data-am="pct"><label>Amortering per år</label><div class="unit"><input data-f="amortPct" data-num inputmode="decimal"><span>% /år</span></div></div>'+
@@ -866,19 +875,13 @@ var SECTIONS=[
     // hur köpet finansieras står i översiktens rad Pengar vid flytten
     '<div data-show="listing"><p class="hint" style="margin:0">Pengarna från försäljningen räknas in under <b>Pengar vid flytten</b> i översikten.</p></div>'}},
   // gemensamt för hushållet: inkomst och stresstest
-  {id:'budget',title:'👛 Hushållets ekonomi och pengar till köpet',
+  {id:'budget',title:'👛 Hushållets ekonomi och stresstest',
    shared:function(){return '<div class="loan-grid">'+
      '<div class="field"><label>Hushållets nettoinkomst</label><div class="unit"><input data-g="income" data-num inputmode="decimal"><span>kr/mån</span></div><span class="hint">Efter skatt, alla vuxna</span></div>'+
      '<div class="field"><label>Övriga levnadskostnader</label><div class="unit"><input data-g="otherExp" data-num inputmode="decimal"><span>kr/mån</span></div><span class="hint">Allt utom boendet: mat, bil, barn, sparande m.m.</span></div>'+
      '<div class="field"><label>Stresstest: räntan stiger med</label><select data-g="stress">'+[1,2,3,4,5].map(function(v){return '<option value="'+v+'">'+v+' procentenhet'+(v>1?'er':'')+'</option>'}).join('')+'</select><span class="hint">Hur mycket mer det kostar om räntan blir så mycket högre – bankerna prövar också med högre ränta</span></div>'+
      '</div>'+
-     // pengarna till köpet: försäljningen räknas ut, resten fylls i per person eller konto
-     '<h3 style="margin:16px 0 8px">Pengar till köpet</h3><div class="funds">'+
-       '<div class="fund-row"><span class="fund-lbl" id="fundSaleLbl">Från försäljningen</span><span class="fund-v" id="fundSale">–</span></div>'+
-       state.g.funds.map(function(x,k){return '<div class="fund-row"><input class="fund-name" data-fundname="'+k+'" value="'+esc(x.name)+'" aria-label="Namn">'+
-         '<div class="unit"><input data-fund="'+k+'" data-num inputmode="decimal" value="'+(x.amount==null?'':fmtNum(x.amount,2))+'"><span>kr</span></div></div>'}).join('')+
-       '<div class="fund-row tot"><span>Summa</span><span class="fund-v" id="fundSum">–</span></div></div>'+
-     '<p class="hint" style="margin:8px 0 0">Det ni kan lägga på insats, lagfart och pantbrev. Namnen går att ändra. Kvar att leva på och Pengar vid flytten visas i översikten högst upp, stresstestet i jämförelsen längst ner.</p>'}},
+     '<p class="hint" style="margin:10px 0 0">Kvar att leva på visas i översikten högst upp, stresstestet i jämförelsen längst ner. Sparpengarna fyller du i bredvid kontantinsatsen.</p>'}},
   {id:'building',title:'🧱 Byggnad',body:function(i){return '<div class="g2">'+BUILDING.map(function(x){return fText('building.'+x[0],x[1])}).join('')+'</div>'}},
   {id:'features',title:'✨ Egenskaper och anteckningar',body:function(i){return '<div class="chips">'+
     FEATURES.map(function(f){return '<label class="chip"><input type="checkbox" data-feat="'+f[0]+'"><span>'+f[1]+'</span></label>'}).join('')+
@@ -1388,9 +1391,11 @@ function renderSecResults(A,B,ca,cb){
   set('sale',cur<0?'':miss(state.houses[cur].purchasePrice==null?['inköpspris']:[]).replace('saknar','Saknar'));
   set('budget',ca.has||cb.has?miss(state.g.income?[]:['nettoinkomst']).replace('saknar','Saknar'):'');
   var sale=cur>=0?[ca,cb][cur].sale:null,fs=fundsSum();
-  if($('#fundSale')){$('#fundSaleLbl').textContent=cur>=0?'Från försäljningen av '+letter(cur):'Från försäljningen';
-    $('#fundSale').textContent=cur<0?'Ingen nuvarande bostad':sale?krR(sale.net):'Fyll i värde och lån';
-    $('#fundSum').textContent=sale||fs!=null?krR((sale?sale.net:0)+(fs||0)):'–';}
+  $$('[data-o="fundSaleLbl"]').forEach(function(e){e.textContent=cur>=0?'Från försäljningen av '+letter(cur):'Från försäljningen'});
+  $$('[data-o="fundSale"]').forEach(function(e){e.textContent=cur<0?'Ingen nuvarande bostad':sale?krR(sale.net):'Fyll i värde och lån'});
+  $$('[data-o="fundSum"]').forEach(function(e){e.textContent=sale||fs!=null?krR((sale?sale.net:0)+(fs||0)):'–'});
+  $$('[data-fund]').forEach(function(e){if(document.activeElement!==e){var v=state.g.funds[+e.dataset.fund].amount;e.value=v==null?'':fmtNum(v,2)}});
+  $$('[data-fundname]').forEach(function(e){if(document.activeElement!==e)e.value=state.g.funds[+e.dataset.fundname].name});
   // stresstestets val visar räntan man hamnar på när båda bostäderna har samma ränta
   var sel=$('[data-g="stress"]'),ra=A.rate||0,rb=B.rate||0;
   if(sel)$$('option',sel).forEach(function(o){var v=+o.value;o.textContent=v+' procentenhet'+(v>1?'er':'')+(ra===rb?' – till '+fmtNum(ra+v,2)+' %':'')});
