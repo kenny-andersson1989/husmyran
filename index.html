@@ -527,7 +527,9 @@ function calc(h){
   if(h.current){loan=h.existingLoan||0}
   else{
     // kontantinsats i kronor; tomt fält = 15 % av priset
-    down=Math.min(price,h.down!=null?h.down:price*0.15);
+    // kontantinsatsen är summan av sparpengarna (försäljningen + Helny, Kenny, Huskonto); tomt = 15 % av priset
+    var av=fundsAvailable(h);
+    down=Math.min(price,av>0?av:price*0.15);
     loan=Math.max(0,price-down);
   }
   var ltv=price?loan/price:0;
@@ -835,8 +837,7 @@ var SECTIONS=[
     '<div data-show="listing" style="display:contents">'+
       // kontantinsatsen och sparpengarna bredvid varandra på en egen rad
       '<div class="full g2">'+
-      '<div class="field"><label>Kontantinsats</label><div class="unit"><input data-f="down" data-num inputmode="decimal"><span>kr</span></div><span class="hint" data-o="downHint"></span>'+
-        '<span class="hint" data-o="downRoom"></span></div>'+
+      '<div class="field"><label>Kontantinsats</label><div class="drift-sum" data-o="downSum"></div><span class="hint" data-o="downHint"></span></div>'+
       // sparpengarna bredvid kontantinsatsen – samma belopp för båda bostäderna
       '<div class="field"><label>Våra sparpengar</label>'+fundsHTML()+'</div></div>'+
       fNum('pantbrev','Befintliga '+term('pantbrev',TERMS.pantbrev),'kr','Finns redan på huset – du betalar bara för nya utöver dem')+
@@ -992,7 +993,6 @@ function bindApp(){
     if(b.dataset.act==='rmFeat'){h.extraFeatures.splice(+b.dataset.n,1);save();renderOutputs(i);renderAll();}
     if(b.dataset.act==='near')fetchNear(i);
     // lägg alla pengar till köpet som kontantinsats
-    if(b.dataset.act==='downAll'){var cc=calc(h),room=fundsLeft(i);if(room>0){h.down=Math.min(cc.price,Math.round(cc.down+room));save();renderHouse(i);renderAll()}}
     if(b.dataset.act==='rmImg'){h.image='';h.ownImage=false;save();renderOutputs(i);}
     if(b.dataset.act==='clear'&&confirm('Töm alla uppgifter för bostad '+letter(i)+'?')){state.houses[i]=newHouse(h.current);save();renderHouse(i);renderAll();}
   });
@@ -1075,13 +1075,11 @@ function renderOutputs(i){
   hqa(i,'[data-f="driftItems.other"]').forEach(function(inp){if(document.activeElement!==inp){var v=h.driftItems.other;inp.value=v==null?'':fmtNum(v,2)}});
   var elM=monthly(h,'driftItems.el');
   hq(i,'[data-o="kwhHint"]').textContent=elM&&h.kwh?'≈ '+fmtNum(elM*12/h.kwh,2)+' kr/kWh':'Mängd el, inte kostnad';
-  // kontantinsats: förifylld med 15 % tills man skriver ett eget belopp
-  var downIn=hq(i,'[data-f="down"]');
-  if(h.down==null&&document.activeElement!==downIn)downIn.value=c.price?fmtNum(c.down):'';
-  // hur mycket mer som kan läggas in med pengarna till köpet
-  var room=fundsLeft(i);
-  hq(i,'[data-o="downRoom"]').innerHTML=room>=1000?'Ni har '+krR(room)+' mer till köpet <button class="linkbtn" type="button" data-act="downAll">Lägg in allt</button>':'';
-  hq(i,'[data-o="downHint"]').textContent=c.price?(h.down==null?'Förifyllt med 15 % av priset · ':'')+'Lånet blir '+fmtNum(c.ltv*100,1)+' % av priset'+(c.ltv>0.9?' – över bolånetaket 90 %':''):'Förifylls så att belåningsgraden blir 85 %';
+  // kontantinsatsen: summan av sparpengarna bredvid, annars 15 % av priset
+  var fromFunds=!h.current&&fundsAvailable(h)>0;
+  hq(i,'[data-o="downSum"]').innerHTML=c.price?kr(c.down)+' <small>· '+fmtNum(c.downPct,1)+' % av priset</small>':'–';
+  hq(i,'[data-o="downHint"]').textContent=!c.price?'Räknas ut när priset är ifyllt':
+    (fromFunds?'Summan av sparpengarna bredvid':'15 % av priset – fyll i sparpengarna bredvid')+' · lånet blir '+fmtNum(c.ltv*100,1)+' % av priset'+(c.ltv>0.9?' – över bolånetaket 90 %':'');
   hq(i,'[data-f="propertyFee"]').placeholder=h.propertyFee==null?fmtNum(perOf(h,'propertyFee')==='år'?c.autoFee:c.autoFee/12)+' (uppsk.)':'';
   // förklaring under fastighetsavgiften – alltid en rad så att kolumnerna hamnar i jämnhöjd
   hq(i,'[data-o="feeHint"]').textContent=h.propertyFee!=null?'Ditt eget belopp':
@@ -1298,6 +1296,11 @@ function stressLabel(){var a=state.houses[0].rate||0,b=state.houses[1].rate||0,s
   return a===b?{label:'Om räntan blir '+fmtNum(a+st,2)+' %',sub:'i dag '+fmtNum(a,2)+' % · att betala per månad'}
     :{label:'Om räntan blir A '+fmtNum(a+st,2)+' %, B '+fmtNum(b+st,2)+' %',sub:'i dag A '+fmtNum(a,2)+' %, B '+fmtNum(b,2)+' % · att betala per månad'}}
 // pengar som blir över (eller saknas) vid köpet: försäljningen av den nuvarande bostaden plus sparpengarna, minus kontanterna som behövs
+// pengar till kontantinsatsen för en bostad man köper: den nuvarande bostadens försäljning plus sparpengarna
+function fundsAvailable(h){
+  var o=state.houses[1-state.houses.indexOf(h)],sale=o&&o.current?calc(o).sale:null;
+  return (sale?sale.net:0)+(fundsSum()||0);
+}
 function fundsSum(){var s=0,any=false;state.g.funds.forEach(function(x){if(x.amount!=null){s+=x.amount;any=true}});return any?s:null}
 function fundsLeft(i){
   var h=state.houses[i],o=state.houses[1-i],sav=fundsSum(),c=calc(h);
@@ -1362,7 +1365,8 @@ function renderOverview(A,B,ca,cb){
       return '<small>behövs vid köpet'+(x==null?'':x>=0?' · pengarna räcker':' · '+krR(-x)+' saknas')+'</small>'};
     var cell=function(k){return money[k]==null?'<span class="hint">'+(hs[k].current?'Fyll i värde och lån':'Fyll i pris')+'</span>':krR(money[k])+note(k)};
     if(swap&&money[0]!=null&&money[1]!=null){var left=fundsLeft(1-cur);
-      dv='<span class="dv '+(left>=0?'good':'bad')+'">'+krR(Math.abs(left))+(left>=0?' över':' saknas')+'</span>'}
+      var fees=cs[1-cur].lagfart+cs[1-cur].pantbrev;
+      dv='<span class="dv '+(left>=0?'good':'bad')+'">'+krR(Math.abs(left))+(left>=0?' över':' saknas')+(left<0&&Math.abs(-left-fees)<1?'<small>till lagfart och pantbrev</small>':'')+'</span>'}
     else if(!swap&&money[0]!=null&&money[1]!=null&&Math.abs(money[1]-money[0])>=1){var d2=money[1]-money[0];
       dv='<span class="dv '+(d2>0?'bad':'good')+'">'+(d2>0?'+':'−')+krR(Math.abs(d2))+'</span>'}
     // pengarna till köpet per person eller konto
